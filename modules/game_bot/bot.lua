@@ -125,6 +125,166 @@ function applyWalkingProtections()
   end
 end
 
+applyWalkingProtections()nction' then return name .. ': not a function' end
+  local res = name .. ' info:\n'
+  local i = 1
+  while true do
+    local n, v = debug.getupvalue(fn, i)
+    if not n then break end
+    res = res .. '  upvalue ' .. i .. ': ' .. tostring(n) .. ' = ' .. tostring(v) .. ' (' .. type(v) .. ')\n'
+    if type(v) == 'table' and i < 10 then
+      for tk, tv in pairs(v) do
+        res = res .. '    [' .. tostring(tk) .. '] = ' .. tostring(tv) .. '\n'
+      end
+    end
+    i = i + 1
+  end
+  return res
+end
+
+local function inspectGameWalk()
+  local gw = modules.game_walk
+  if not gw then return end
+  local out = '=== GAME_WALK DUMP ===\n'
+  for k, v in pairs(gw) do
+    out = out .. 'field ' .. tostring(k) .. ' = ' .. tostring(v) .. '\n'
+    if type(v) == 'function' then
+      out = out .. dumpFuncInfo(v, tostring(k))
+    end
+  end
+  pwarning(out)
+  local f = io.open('C:/Users/Gera/AppData/Roaming/hegalot/hegalot/hegalot/walk_dump.txt', 'w')
+  if f then f:write(out) f:close() end
+end
+pcall(inspectGameWalk)
+
+botWindow = nil
+botButton = nil
+contentsPanel = nil
+editWindow = nil
+
+local checkEvent = nil
+
+local botStorage = {}
+local botStorageFile = nil
+local botWebSockets = {}
+local botMessages = nil
+local botTabs = nil
+local botExecutor = nil
+
+local configList = nil
+local enableButton = nil
+local executeEvent = nil
+local statusLabel = nil
+
+local configManagerUrl = "http://otclient.ovh/configs.php"
+
+
+-- Polyfill for HegalOT walk/keybind compatibility and permanent NumPad movement stripper
+local function polyfillWalking(m)
+  if not m then return end
+  local dummy = function(...) return true end
+  if not m.unbindTurnKeys then m.unbindTurnKeys = dummy end
+  if not m.bindTurnKeys then m.bindTurnKeys = dummy end
+  if not m.unbindTurnKey then m.unbindTurnKey = dummy end
+  if not m.bindTurnKey then m.bindTurnKey = dummy end
+  if not m.unbindWalkKeys then m.unbindWalkKeys = dummy end
+  if not m.bindWalkKeys then m.bindWalkKeys = dummy end
+  if not m.unbindWalkKey then m.unbindWalkKey = dummy end
+  if not m.bindWalkKey then m.bindWalkKey = dummy end
+  if not m.bindKeys then m.bindKeys = dummy end
+  if not m.unbindKeys then m.unbindKeys = dummy end
+  if not m.enableWSAD then m.enableWSAD = dummy end
+  if not m.disableWSAD then m.disableWSAD = dummy end
+end
+
+local numpadKeysList = {
+  "Numpad0", "Numpad1", "Numpad2", "Numpad3", "Numpad4",
+  "Numpad5", "Numpad6", "Numpad7", "Numpad8", "Numpad9",
+  "NumLock", "Numpad.", "Numpad+", "Numpad-", "Numpad*", "Numpad/"
+}
+
+local function isNumpadKeyString(key)
+  if not key or type(key) ~= "string" then return false end
+  local lk = key:lower()
+  return lk:find("numpad") ~= nil or lk:find("num") ~= nil
+end
+
+local function cleanNumpadWalking(m)
+  if not m then return end
+
+  -- 1. Intercept bindWalkKey to NEVER bind any NumPad key to walking
+  if not m.__origBindWalkKey then
+    m.__origBindWalkKey = m.bindWalkKey or function() end
+  end
+  m.bindWalkKey = function(key, dir, ...)
+    if isNumpadKeyString(key) then
+      return
+    end
+    return m.__origBindWalkKey(key, dir, ...)
+  end
+
+  -- 2. Intercept bindTurnKey to NEVER bind any NumPad key to turning
+  if not m.__origBindTurnKey then
+    m.__origBindTurnKey = m.bindTurnKey or function() end
+  end
+  m.bindTurnKey = function(key, dir, ...)
+    if isNumpadKeyString(key) then
+      return
+    end
+    return m.__origBindTurnKey(key, dir, ...)
+  end
+
+  -- 3. Override bindKeys so NumPad keys are never registered for walking/turning
+  m.bindKeys = function()
+    if m.bindWalkKey then
+      m.bindWalkKey('Up', North)
+      m.bindWalkKey('Right', East)
+      m.bindWalkKey('Down', South)
+      m.bindWalkKey('Left', West)
+    end
+    if m.bindTurnKey then
+      m.bindTurnKey('Ctrl+Up', North)
+      m.bindTurnKey('Ctrl+Right', East)
+      m.bindTurnKey('Ctrl+Down', South)
+      m.bindTurnKey('Ctrl+Left', West)
+    end
+  end
+
+  -- 4. Clean walkKeys table
+  if m.walkKeys and type(m.walkKeys) == "table" then
+    for k, _ in pairs(m.walkKeys) do
+      if isNumpadKeyString(k) then
+        m.walkKeys[k] = nil
+      end
+    end
+  end
+
+  -- 5. Explicitly unbind walk and turn keys for all NumPad keys
+  for _, key in ipairs(numpadKeysList) do
+    if m.unbindWalkKey then
+      pcall(m.unbindWalkKey, key)
+    end
+    if m.unbindTurnKey then
+      pcall(m.unbindTurnKey, key)
+      pcall(m.unbindTurnKey, "Ctrl+" .. key)
+      pcall(m.unbindTurnKey, "Shift+" .. key)
+      pcall(m.unbindTurnKey, "Alt+" .. key)
+    end
+  end
+end
+
+function applyWalkingProtections()
+  if modules.game_walk then
+    polyfillWalking(modules.game_walk)
+    cleanNumpadWalking(modules.game_walk)
+  end
+  if modules.game_walking then
+    polyfillWalking(modules.game_walking)
+    cleanNumpadWalking(modules.game_walking)
+  end
+end
+
 applyWalkingProtections()
 
 function init()
