@@ -1,8 +1,26 @@
--- extras module
-local walkingMod = modules.game_walking or modules.game_walk
-if not modules.game_walking and modules.game_walk then
-  modules.game_walking = modules.game_walk
+local function polyfillWalking(m)
+  if not m then return end
+  local dummy = function(...) return true end
+  if not m.unbindTurnKeys then m.unbindTurnKeys = dummy end
+  if not m.bindTurnKeys then m.bindTurnKeys = dummy end
+  if not m.unbindTurnKey then m.unbindTurnKey = dummy end
+  if not m.bindTurnKey then m.bindTurnKey = dummy end
+  if not m.unbindWalkKeys then m.unbindWalkKeys = dummy end
+  if not m.bindWalkKeys then m.bindWalkKeys = dummy end
+  if not m.unbindWalkKey then m.unbindWalkKey = dummy end
+  if not m.bindWalkKey then m.bindWalkKey = dummy end
+  if not m.bindKeys then m.bindKeys = dummy end
+  if not m.unbindKeys then m.unbindKeys = dummy end
+  if not m.enableWSAD then m.enableWSAD = dummy end
+  if not m.disableWSAD then m.disableWSAD = dummy end
 end
+
+if modules.game_walk then polyfillWalking(modules.game_walk) end
+if not modules.game_walking then
+  modules.game_walking = modules.game_walk or {}
+end
+polyfillWalking(modules.game_walking)
+local walkingMod = modules.game_walking or modules.game_walk
 setDefaultTab("Main")
 
 -- securing storage namespace
