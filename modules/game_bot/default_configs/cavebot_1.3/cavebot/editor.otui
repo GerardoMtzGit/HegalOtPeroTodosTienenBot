@@ -1,0 +1,51 @@
+CaveBotEditorButton < Button
+  height: 20
+  font: verdana-11px-rounded
+  text-offset: 0 0
+
+CaveBotEditorPanel < Panel
+  id: cavebotEditor
+  visible: false
+  layout:
+    type: verticalBox
+    fit-children: true
+  
+  Label
+    id: pos
+    text-align: center
+    text: -
+    font: verdana-11px-rounded
+    margin-top: 2
+    margin-bottom: 2
+    
+  Panel
+    id: buttons
+    margin-top: 2
+    layout:
+      type: grid
+      cell-size: 78 20
+      cell-spacing: 2
+      flow: true
+      fit-children: true
+
+  Label
+    text: Double click on action from action list to edit it
+    text-align: center
+    text-auto-resize: true
+    text-wrap: true
+    font: verdana-11px-rounded
+    color: #888888
+    margin-top: 4
+    margin-left: 2
+    margin-right: 2
+
+  BotSwitch
+    id: autoRecording
+    text: Auto Recording
+    margin-top: 4
+
+  BotButton
+    margin-top: 3
+    margin-bottom: 3
+    text: Documentation
+    @onClick: g_platform.openUrl("http://bot.otclient.ovh/")

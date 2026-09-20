@@ -1,0 +1,11 @@
+# Temporary & Log Files
+*.log
+*.tmp
+*.dmp
+
+# OS Specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.BIN/
+.DS_Store
