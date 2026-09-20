@@ -1,3 +1,4 @@
+-- Permanent NumPad movement protection and walk polyfill
 local function polyfillWalking(m)
   if not m then return end
   local dummy = function(...) return true end
@@ -15,12 +16,75 @@ local function polyfillWalking(m)
   if not m.disableWSAD then m.disableWSAD = dummy end
 end
 
-if modules.game_walk then polyfillWalking(modules.game_walk) end
+local numpadKeysList = {
+  "Numpad0", "Numpad1", "Numpad2", "Numpad3", "Numpad4",
+  "Numpad5", "Numpad6", "Numpad7", "Numpad8", "Numpad9",
+  "NumLock", "Numpad.", "Numpad+", "Numpad-", "Numpad*", "Numpad/"
+}
+
+local function isNumpadKeyString(key)
+  if not key or type(key) ~= "string" then return false end
+  local lk = key:lower()
+  return lk:find("numpad") ~= nil or lk:find("num") ~= nil
+end
+
+local function cleanNumpadWalking(m)
+  if not m then return end
+  if not m.__origBindWalkKey then
+    m.__origBindWalkKey = m.bindWalkKey or function() end
+  end
+  m.bindWalkKey = function(key, dir, ...)
+    if isNumpadKeyString(key) then return end
+    return m.__origBindWalkKey(key, dir, ...)
+  end
+  if not m.__origBindTurnKey then
+    m.__origBindTurnKey = m.bindTurnKey or function() end
+  end
+  m.bindTurnKey = function(key, dir, ...)
+    if isNumpadKeyString(key) then return end
+    return m.__origBindTurnKey(key, dir, ...)
+  end
+  m.bindKeys = function()
+    if m.bindWalkKey then
+      m.bindWalkKey('Up', North)
+      m.bindWalkKey('Right', East)
+      m.bindWalkKey('Down', South)
+      m.bindWalkKey('Left', West)
+    end
+    if m.bindTurnKey then
+      m.bindTurnKey('Ctrl+Up', North)
+      m.bindTurnKey('Ctrl+Right', East)
+      m.bindTurnKey('Ctrl+Down', South)
+      m.bindTurnKey('Ctrl+Left', West)
+    end
+  end
+  if m.walkKeys and type(m.walkKeys) == "table" then
+    for k, _ in pairs(m.walkKeys) do
+      if isNumpadKeyString(k) then m.walkKeys[k] = nil end
+    end
+  end
+  for _, key in ipairs(numpadKeysList) do
+    if m.unbindWalkKey then pcall(m.unbindWalkKey, key) end
+    if m.unbindTurnKey then
+      pcall(m.unbindTurnKey, key)
+      pcall(m.unbindTurnKey, "Ctrl+" .. key)
+      pcall(m.unbindTurnKey, "Shift+" .. key)
+      pcall(m.unbindTurnKey, "Alt+" .. key)
+    end
+  end
+end
+
+if modules.game_walk then
+  polyfillWalking(modules.game_walk)
+  cleanNumpadWalking(modules.game_walk)
+end
 if not modules.game_walking then
   modules.game_walking = modules.game_walk or {}
 end
 polyfillWalking(modules.game_walking)
+cleanNumpadWalking(modules.game_walking)
 local walkingMod = modules.game_walking or modules.game_walk
+
 setDefaultTab("Main")
 
 -- securing storage namespace

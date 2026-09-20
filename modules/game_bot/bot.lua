@@ -20,7 +20,7 @@ local statusLabel = nil
 local configManagerUrl = "http://otclient.ovh/configs.php"
 
 
--- Polyfill for HegalOT walk/keybind compatibility
+-- Polyfill for HegalOT walk/keybind compatibility and permanent NumPad movement stripper
 local function polyfillWalking(m)
   if not m then return end
   local dummy = function(...) return true end
@@ -38,8 +38,94 @@ local function polyfillWalking(m)
   if not m.disableWSAD then m.disableWSAD = dummy end
 end
 
-if modules.game_walk then polyfillWalking(modules.game_walk) end
-if modules.game_walking then polyfillWalking(modules.game_walking) end
+local numpadKeysList = {
+  "Numpad0", "Numpad1", "Numpad2", "Numpad3", "Numpad4",
+  "Numpad5", "Numpad6", "Numpad7", "Numpad8", "Numpad9",
+  "NumLock", "Numpad.", "Numpad+", "Numpad-", "Numpad*", "Numpad/"
+}
+
+local function isNumpadKeyString(key)
+  if not key or type(key) ~= "string" then return false end
+  local lk = key:lower()
+  return lk:find("numpad") ~= nil or lk:find("num") ~= nil
+end
+
+local function cleanNumpadWalking(m)
+  if not m then return end
+
+  -- 1. Intercept bindWalkKey to NEVER bind any NumPad key to walking
+  if not m.__origBindWalkKey then
+    m.__origBindWalkKey = m.bindWalkKey or function() end
+  end
+  m.bindWalkKey = function(key, dir, ...)
+    if isNumpadKeyString(key) then
+      return
+    end
+    return m.__origBindWalkKey(key, dir, ...)
+  end
+
+  -- 2. Intercept bindTurnKey to NEVER bind any NumPad key to turning
+  if not m.__origBindTurnKey then
+    m.__origBindTurnKey = m.bindTurnKey or function() end
+  end
+  m.bindTurnKey = function(key, dir, ...)
+    if isNumpadKeyString(key) then
+      return
+    end
+    return m.__origBindTurnKey(key, dir, ...)
+  end
+
+  -- 3. Override bindKeys so NumPad keys are never registered for walking/turning
+  m.bindKeys = function()
+    if m.bindWalkKey then
+      m.bindWalkKey('Up', North)
+      m.bindWalkKey('Right', East)
+      m.bindWalkKey('Down', South)
+      m.bindWalkKey('Left', West)
+    end
+    if m.bindTurnKey then
+      m.bindTurnKey('Ctrl+Up', North)
+      m.bindTurnKey('Ctrl+Right', East)
+      m.bindTurnKey('Ctrl+Down', South)
+      m.bindTurnKey('Ctrl+Left', West)
+    end
+  end
+
+  -- 4. Clean walkKeys table
+  if m.walkKeys and type(m.walkKeys) == "table" then
+    for k, _ in pairs(m.walkKeys) do
+      if isNumpadKeyString(k) then
+        m.walkKeys[k] = nil
+      end
+    end
+  end
+
+  -- 5. Explicitly unbind walk and turn keys for all NumPad keys
+  for _, key in ipairs(numpadKeysList) do
+    if m.unbindWalkKey then
+      pcall(m.unbindWalkKey, key)
+    end
+    if m.unbindTurnKey then
+      pcall(m.unbindTurnKey, key)
+      pcall(m.unbindTurnKey, "Ctrl+" .. key)
+      pcall(m.unbindTurnKey, "Shift+" .. key)
+      pcall(m.unbindTurnKey, "Alt+" .. key)
+    end
+  end
+end
+
+function applyWalkingProtections()
+  if modules.game_walk then
+    polyfillWalking(modules.game_walk)
+    cleanNumpadWalking(modules.game_walk)
+  end
+  if modules.game_walking then
+    polyfillWalking(modules.game_walking)
+    cleanNumpadWalking(modules.game_walking)
+  end
+end
+
+applyWalkingProtections()
 
 function init()
   dofile("executor")
@@ -146,6 +232,7 @@ end
 
 function refresh()
   if not g_game.isOnline() then return end
+  applyWalkingProtections()
   save()
   clear()
   
@@ -282,6 +369,7 @@ function toggle()
 end
 
 function online()
+  applyWalkingProtections()
   botButton:show()
   if not modules.client_profiles.ChangedProfile then
     scheduleEvent(refresh, 20)
