@@ -1,3 +1,15 @@
+
+-- Tile compatibility patch
+if Tile then
+  if not Tile.hasCreature and Tile.hasCreatures then
+    Tile.hasCreature = Tile.hasCreatures
+  elseif not Tile.hasCreature then
+    Tile.hasCreature = function(self)
+      return (self.getTopCreature and self:getTopCreature() ~= nil) or false
+    end
+  end
+end
+
 -- Author: Vithrax
 -- contains mostly basic function shortcuts and code shorteners
 
