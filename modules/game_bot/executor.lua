@@ -21,8 +21,13 @@ function executeBot(config, storage, tabs, msgCallback, saveConfigCallback, relo
   local context = {}
   context.configDir = "/bot/".. config
   context.tabs = tabs
-  context.mainTab = context.tabs:addTab("Main", g_ui.createWidget('BotPanel')).tabPanel.content
+  local mainTabBtn = context.tabs:addTab("Main", g_ui.createWidget('BotPanel'))
+  context.mainTab = mainTabBtn.tabPanel.content
   context.panel = context.mainTab
+  mainTabBtn:setFont('small-9px')
+  mainTabBtn:setPaddingLeft(2)
+  mainTabBtn:setPaddingRight(2)
+  mainTabBtn:setTextHorizontalAutoResize(true)
   context.saveConfig = saveConfigCallback
   context.reload = reloadCallback
   

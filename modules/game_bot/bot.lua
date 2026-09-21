@@ -156,7 +156,8 @@ function init()
   statusLabel = contentsPanel.statusLabel
   botMessages = contentsPanel.messages 
   botTabs = contentsPanel.botTabs
-  botTabs:setContentWidget(contentsPanel.botPanel)  
+  botTabs:setContentWidget(contentsPanel.botPanel)
+  botTabs.tabStyle = 'BotTabBarButton'  
   
   editWindow = g_ui.displayUI('edit')
   editWindow:hide()
