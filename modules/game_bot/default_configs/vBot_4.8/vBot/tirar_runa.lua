@@ -10,18 +10,22 @@ if not storage[panelName] then
     singleRuneId = 3155, -- SD default
     areaRuneId = 3191,   -- GFB default
     minMonsters = 2,
-    delay = 2000,
+    delay = 201,         -- 201 ms default
     areaRadius = 3,
     maxRange = 6,
-    autoTarget = true,
+    autoTarget = true,   -- Auto-apuntar a donde pegue a mas monstruos
     safePvp = true,
     ignoreParty = true
   }
 end
 
 local config = storage[panelName]
+-- Ensure delay is 201 if it had the old default or was unset
+if config.delay == 2000 or not config.delay then
+  config.delay = 201
+end
 
--- Main UI panel in Target Tab (Placed prominently)
+-- Main UI panel in Target Tab (Placed prominently at top)
 local ui = setupUI([[
 Panel
   height: 48
@@ -98,11 +102,11 @@ local function updateStatus()
   local sName = getRuneShortName(config.singleRuneId)
   local aName = getRuneShortName(config.areaRuneId)
   if config.mode == 2 then
-    ui.status:setText(string.format("%s %s (%s)", onText, modeText, sName))
+    ui.status:setText(string.format("%s %s (%s) [%dms]", onText, modeText, sName, config.delay or 201))
   elseif config.mode == 3 then
-    ui.status:setText(string.format("%s %s (%s)", onText, modeText, aName))
+    ui.status:setText(string.format("%s %s (%s) [%dms]", onText, modeText, aName, config.delay or 201))
   else
-    ui.status:setText(string.format("%s %s (%s / %s >=%d)", onText, modeText, sName, aName, config.minMonsters or 2))
+    ui.status:setText(string.format("%s %s (%s/%s >=%d) [%dms]", onText, modeText, sName, aName, config.minMonsters or 2, config.delay or 201))
   end
   if config.enabled then
     ui.status:setColor("#00ff00")
@@ -200,8 +204,8 @@ setAreaRuneOption(config.areaRuneId)
 runeWindow.minMonsters:setValue(config.minMonsters or 2)
 runeWindow.minMonstersLabel:setText("Min. Monsters para Area: " .. tostring(config.minMonsters or 2))
 
-runeWindow.delay:setValue(config.delay or 2000)
-runeWindow.delayLabel:setText("Delay entre Runas: " .. tostring(config.delay or 2000) .. " ms")
+runeWindow.delay:setValue(config.delay or 201)
+runeWindow.delayLabel:setText("Delay entre Runas: " .. tostring(config.delay or 201) .. " ms")
 
 runeWindow.autoTarget:setChecked(config.autoTarget)
 runeWindow.safePvp:setChecked(config.safePvp)
@@ -312,6 +316,7 @@ end
 runeWindow.delay.onValueChange = function(widget, value)
   config.delay = value
   runeWindow.delayLabel:setText("Delay entre Runas: " .. tostring(value) .. " ms")
+  updateStatus()
 end
 
 runeWindow.autoTarget.onClick = function(widget)
@@ -344,91 +349,216 @@ end
 
 updateStatus()
 
--- Core Rune Shooter Loop
-local lastRuneCast = 0
+-- Check whether (mx, my) is within standard 37-tile Tibia area rune blast centered at (cx, cy)
+local function isBlastHit(cx, cy, mx, my)
+  local dx = math.abs(mx - cx)
+  local dy = math.abs(my - cy)
+  return (dx <= 3 and dy <= 3) and (dx + dy <= 4 or (dx <= 2 and dy <= 2))
+end
 
-macro(100, function()
-  if not config.enabled then return end
-  if isInPz() then return end
+-- Function to find the optimal target position where the area rune hits the most monsters
+local function getBestAreaTarget(aliveMonsters, currentTarget)
+  local playerPos = pos()
+  local pz = playerPos.z
 
-  local currentNow = now
-  if lastRuneCast + config.delay > currentNow then return end
+  local candidatePositions = {}
+  local visited = {}
 
-  -- 1. Find target
-  local targetCreature = g_game.getAttackingCreature()
-  if targetCreature then
-    if targetCreature:getPosition().z ~= posz() or targetCreature:getHealthPercent() <= 0 then
-      targetCreature = nil
+  local function addCandidate(p, creature)
+    if not p then return end
+    local key = p.x .. "," .. p.y
+    if not visited[key] then
+      visited[key] = true
+      table.insert(candidatePositions, { pos = p, creature = creature })
     end
   end
 
-  -- If no target and autoTarget enabled, search for closest monster
-  if not targetCreature and config.autoTarget then
-    local playerPos = pos()
-    local closestDist = 999
-    local closestMonster = nil
-    for _, spec in ipairs(getSpectators()) do
-      if spec:isMonster() and spec:getPosition().z == posz() and spec:getHealthPercent() > 0 then
-        local dist = getDistanceBetween(playerPos, spec:getPosition())
-        if dist <= config.maxRange and dist < closestDist then
-          closestDist = dist
-          closestMonster = spec
+  if currentTarget and currentTarget:getPosition().z == pz then
+    addCandidate(currentTarget:getPosition(), currentTarget)
+  end
+
+  for i = 1, #aliveMonsters do
+    local m = aliveMonsters[i]
+    addCandidate(m:getPosition(), m)
+  end
+
+  -- Midpoints between pairs of monsters
+  for i = 1, #aliveMonsters do
+    local p1 = aliveMonsters[i]:getPosition()
+    for j = i + 1, #aliveMonsters do
+      local p2 = aliveMonsters[j]:getPosition()
+      local dist = math.max(math.abs(p1.x - p2.x), math.abs(p1.y - p2.y))
+      if dist <= 6 then
+        local midX = math.floor((p1.x + p2.x) / 2)
+        local midY = math.floor((p1.y + p2.y) / 2)
+        addCandidate({ x = midX, y = midY, z = pz }, nil)
+        local ceilX = math.ceil((p1.x + p2.x) / 2)
+        local ceilY = math.ceil((p1.y + p2.y) / 2)
+        if ceilX ~= midX or ceilY ~= midY then
+          addCandidate({ x = ceilX, y = ceilY, z = pz }, nil)
         end
       end
     end
-    if closestMonster then
-      targetCreature = closestMonster
-      if not g_game.isAttacking() then
-        g_game.attack(closestMonster)
-      end
-    end
   end
 
-  if not targetCreature then return end
+  local allSpecs = getSpectators()
+  local bestScore = -1
+  local bestPos = nil
+  local bestCreature = nil
 
-  -- 2. Count monsters in area around target
-  local tPos = targetCreature:getPosition()
-  local monstersAround = 0
-  local playerNear = false
-  for _, spec in ipairs(getSpectators()) do
-    if spec:getPosition().z == tPos.z and spec:getHealthPercent() > 0 then
-      local dist = math.max(math.abs(spec:getPosition().x - tPos.x), math.abs(spec:getPosition().y - tPos.y))
-      if dist <= (config.areaRadius or 3) then
-        if spec:isMonster() then
-          monstersAround = monstersAround + 1
-        elseif spec:isPlayer() and not spec:isLocalPlayer() then
-          if not config.ignoreParty or spec:getShield() <= 2 then
-            playerNear = true
+  for _, cand in ipairs(candidatePositions) do
+    local cp = cand.pos
+    local distFromPlayer = getDistanceBetween(playerPos, cp)
+    if distFromPlayer <= (config.maxRange or 6) then
+      local tile = g_map.getTile(cp)
+      if tile and tile:canShoot() then
+        -- PVP Safe check: ensure no non-party player is hit by this blast
+        local pvpBlocked = false
+        if config.safePvp then
+          for _, spec in ipairs(allSpecs) do
+            if spec:isPlayer() and not spec:isLocalPlayer() and spec:getPosition().z == pz then
+              local sp = spec:getPosition()
+              if isBlastHit(cp.x, cp.y, sp.x, sp.y) then
+                if not config.ignoreParty or spec:getShield() <= 2 then
+                  pvpBlocked = true
+                  break
+                end
+              end
+            end
+          end
+        end
+
+        if not pvpBlocked then
+          local hits = 0
+          for _, m in ipairs(aliveMonsters) do
+            local mp = m:getPosition()
+            if isBlastHit(cp.x, cp.y, mp.x, mp.y) then
+              hits = hits + 1
+            end
+          end
+
+          local isCurTarget = currentTarget and (cp.x == currentTarget:getPosition().x and cp.y == currentTarget:getPosition().y)
+          local better = hits > bestScore or (hits == bestScore and isCurTarget)
+          if better then
+            bestScore = hits
+            bestPos = cp
+            bestCreature = cand.creature
           end
         end
       end
     end
   end
 
-  -- 3. Determine rune to cast based on user's chosen mode
-  local runeToCast = nil
-  if config.mode == 2 then
-    -- Solo 1 monster
-    runeToCast = config.singleRuneId
-  elseif config.mode == 3 then
-    -- Varios monsters (Area)
-    if config.safePvp and playerNear then
-      runeToCast = config.singleRuneId
-    else
-      runeToCast = config.areaRuneId
-    end
-  else
-    -- Dinamico (1 = single, >= minMonsters = area)
-    if monstersAround >= (config.minMonsters or 2) and not (config.safePvp and playerNear) then
-      runeToCast = config.areaRuneId
-    else
-      runeToCast = config.singleRuneId
+  return bestPos, bestCreature, bestScore
+end
+
+-- Core Rune Shooter Loop (runs every 20ms for fast, exact 201ms responsiveness)
+local lastRuneCast = 0
+
+macro(20, function()
+  if not config.enabled then return end
+  if isInPz() then return end
+
+  local currentNow = now
+  local delayMs = config.delay or 201
+  if lastRuneCast + delayMs > currentNow then return end
+
+  local playerPos = pos()
+  local pz = playerPos.z
+
+  -- 1. Gather all alive monsters on current floor within range
+  local aliveMonsters = {}
+  for _, spec in ipairs(getSpectators()) do
+    if spec:isMonster() and spec:getPosition().z == pz and spec:getHealthPercent() > 0 then
+      if getDistanceBetween(playerPos, spec:getPosition()) <= (config.maxRange or 6) then
+        table.insert(aliveMonsters, spec)
+      end
     end
   end
 
-  if not runeToCast or runeToCast <= 0 then return end
+  if #aliveMonsters == 0 then return end
 
-  -- 4. Cast rune
-  useWith(runeToCast, targetCreature)
-  lastRuneCast = currentNow
+  -- 2. Find current target
+  local currentTarget = g_game.getAttackingCreature()
+  if currentTarget then
+    if currentTarget:getPosition().z ~= pz or currentTarget:getHealthPercent() <= 0 then
+      currentTarget = nil
+    end
+  end
+
+  -- If no target and autoTarget enabled, pick closest monster as target
+  if not currentTarget and config.autoTarget then
+    local closestDist = 999
+    local closestMonster = nil
+    for _, m in ipairs(aliveMonsters) do
+      local dist = getDistanceBetween(playerPos, m:getPosition())
+      if dist < closestDist then
+        closestDist = dist
+        closestMonster = m
+      end
+    end
+    if closestMonster then
+      currentTarget = closestMonster
+      if not g_game.isAttacking() then
+        g_game.attack(closestMonster)
+      end
+    end
+  end
+
+  -- 3. Determine if we should shoot Area or Single rune
+  local wantArea = false
+  if config.mode == 3 then
+    -- Always area
+    wantArea = true
+  elseif config.mode == 1 then
+    -- Dinamico: use area if monsters count >= minMonsters
+    wantArea = #aliveMonsters >= (config.minMonsters or 2)
+  else
+    -- Solo 1 monster (Single)
+    wantArea = false
+  end
+
+  -- 4. Execute shooting
+  if wantArea and config.areaRuneId and config.areaRuneId > 0 then
+    -- AREA RUNE: Aim where it hits the MAXIMUM number of monsters
+    local bestPos, bestCreature, bestScore = nil, nil, 0
+    if config.autoTarget then
+      bestPos, bestCreature, bestScore = getBestAreaTarget(aliveMonsters, currentTarget)
+    elseif currentTarget then
+      bestPos = currentTarget:getPosition()
+      bestCreature = currentTarget
+      bestScore = 1
+    end
+
+    if bestPos then
+      -- If we found an optimal spot for area rune
+      local targetThing = bestCreature
+      if not targetThing then
+        local tile = g_map.getTile(bestPos)
+        if tile then
+          targetThing = tile:getTopUseThing() or tile:getGround() or tile
+        end
+      end
+      if targetThing then
+        useWith(config.areaRuneId, targetThing)
+        lastRuneCast = currentNow
+        return
+      end
+    end
+
+    -- If area was blocked by PVP Safe, fallback to Single rune if available
+    if config.singleRuneId and config.singleRuneId > 0 and currentTarget then
+      useWith(config.singleRuneId, currentTarget)
+      lastRuneCast = currentNow
+      return
+    end
+  else
+    -- SINGLE RUNE: Aim directly at target creature
+    local targetToShoot = currentTarget or aliveMonsters[1]
+    if targetToShoot and config.singleRuneId and config.singleRuneId > 0 then
+      useWith(config.singleRuneId, targetToShoot)
+      lastRuneCast = currentNow
+      return
+    end
+  end
 end)

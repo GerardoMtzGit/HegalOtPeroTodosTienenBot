@@ -168,7 +168,7 @@ TirarRunaWindow < MainWindow
     anchors.left: parent.left
     anchors.right: parent.right
     margin-top: 6
-    text: Delay entre Runas: 2000 ms
+    text: Delay entre Runas: 201 ms
     font: cipsoftFont
 
   HorizontalScrollBar
@@ -177,9 +177,9 @@ TirarRunaWindow < MainWindow
     anchors.left: parent.left
     anchors.right: parent.right
     margin-top: 3
-    minimum: 800
-    maximum: 3000
-    step: 100
+    minimum: 50
+    maximum: 2000
+    step: 1
 
   CheckBox
     id: autoTarget
@@ -187,7 +187,7 @@ TirarRunaWindow < MainWindow
     anchors.left: parent.left
     anchors.right: parent.right
     margin-top: 8
-    text: Auto-apuntar (atacar monstruos cercanos)
+    text: Auto-apuntar (donde pegue a mas monstruos)
     font: cipsoftFont
 
   CheckBox
