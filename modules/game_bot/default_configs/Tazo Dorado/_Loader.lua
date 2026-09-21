@@ -22,8 +22,8 @@ local luaFiles = {
   "new_cavebot_lib",
   "configs", -- do not change this and above
   "extras",
-  "cavebot",
   "tirar_runa",
+  "cavebot",
   "playerlist",
   "BotServer",
   "alarms",
