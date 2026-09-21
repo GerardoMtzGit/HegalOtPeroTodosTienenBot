@@ -1,6 +1,6 @@
 TirarRunaWindow < MainWindow
-  !text: tr('Configuracion: Tirar Runa')
-  size: 320 380
+  !text: tr('Configuracion: Tirar Runa / Spell')
+  size: 340 415
   @onEscape: self:hide()
 
   Label
@@ -43,7 +43,7 @@ TirarRunaWindow < MainWindow
       anchors.top: parent.top
       anchors.left: parent.left
       anchors.right: parent.right
-      text: Runa 1 Monster:
+      text: Runa / Spell 1 Monster:
       font: cipsoftFont
       color: #66ccff
 
@@ -68,7 +68,7 @@ TirarRunaWindow < MainWindow
       anchors.left: singleItem.right
       margin-left: 8
       margin-top: 6
-      text: Item ID:
+      text: Spell / ID:
       font: cipsoftFont
 
     TextEdit
@@ -182,11 +182,20 @@ TirarRunaWindow < MainWindow
     step: 1
 
   CheckBox
-    id: autoTarget
+    id: singleApproach
     anchors.top: prev.bottom
     anchors.left: parent.left
     anchors.right: parent.right
     margin-top: 8
+    text: Acercarse a 3 SQM si usa Spell Single
+    font: cipsoftFont
+
+  CheckBox
+    id: autoTarget
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
     text: Auto-apuntar (donde pegue a mas monstruos)
     font: cipsoftFont
 
