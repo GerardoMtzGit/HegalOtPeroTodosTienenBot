@@ -1,3 +1,5 @@
+setDefaultTab("Main")
+
 local panelName = "alarms"
 local ui = setupUI([[
 Panel
@@ -57,7 +59,6 @@ local parents =
   window.settingsList
 }
 
-
 -- type
 addAlarm = function(id, title, defaultValue, alarmType, parent, tooltip)
   local widget = UI.createWidget(widgets[alarmType], parents[parent])
@@ -67,9 +68,19 @@ addAlarm = function(id, title, defaultValue, alarmType, parent, tooltip)
     config[id] = {}
   end
 
+  if type(config[id].enabled) == 'nil' then
+    if alarmType == 1 then
+      config[id].enabled = defaultValue
+    else
+      config[id].enabled = false
+    end
+  end
+
   widget.tick:setText(title)
   widget.tick:setChecked(config[id].enabled)
-  widget.tick:setTooltip(tooltip)
+  if tooltip then
+    widget.tick:setTooltip(tooltip)
+  end
   widget.tick.onClick = function()
     config[id].enabled = not config[id].enabled
     widget.tick:setChecked(config[id].enabled)
@@ -80,17 +91,16 @@ addAlarm = function(id, title, defaultValue, alarmType, parent, tooltip)
   end
 
   if alarmType == 2 then
-    widget.value:setValue(config[id].value)
+    widget.value:setValue(config[id].value or defaultValue)
     widget.value.onValueChange = function(widget, value)
       config[id].value = value
     end
   elseif alarmType == 3 then
-    widget.text:setText(config[id].value)
+    widget.text:setText(config[id].value or defaultValue or "")
     widget.text.onTextChange = function(widget, newText)
       config[id].value = newText
     end
   end
-
 end
 
 -- settings
@@ -122,27 +132,49 @@ local function alarm(file, windowText)
   lastCall = now
 
   if not g_resources.fileExists(file) then
-    file = "/sounds/alarm.ogg"
+    if g_resources.fileExists("/sounds/alarm.ogg") then
+      file = "/sounds/alarm.ogg"
+    elseif g_resources.fileExists("/sounds/magnum.ogg") then
+      file = "/sounds/magnum.ogg"
+    end
     lastCall = now + 4000 -- alarm.ogg length is 6s
   end
 
-  
-  if modules.game_bot.g_app.getOs() == "windows" and config.flashClient.enabled then
-    g_window.flash()
-  end
-  g_window.setTitle(player:getName() .. " - " .. windowText)
-  playSound(file)
+  pcall(function()
+    if g_window and g_window.flash and config.flashClient and config.flashClient.enabled then
+      g_window.flash()
+    end
+  end)
+
+  pcall(function()
+    local pName = player and player:getName() or "Player"
+    g_window.setTitle(pName .. " - " .. (windowText or "Alarm!"))
+  end)
+
+  pcall(function()
+    playSound(file)
+  end)
+
+  pcall(function()
+    if modules.game_textmessage and modules.game_textmessage.displayFailureMessage then
+      modules.game_textmessage.displayFailureMessage("[ALARM] " .. (windowText or "Alert!"))
+    end
+  end)
 end
 
 -- damage taken & custom message
 onTextMessage(function(mode, text)
   if not config.enabled then return end
-  if mode == 22 and config.damageTaken.enabled then
+  if mode == 22 and config.damageTaken and config.damageTaken.enabled then
     return alarm('/sounds/magnum.ogg', "Damage Received!")
   end
 
-  if config.customMessage.enabled then
-    local alertText = config.customMessage.value
+  if config.playerAttack and config.playerAttack.enabled and string.match(text, "hitpoints due to an attack") and not string.match(text, "hitpoints due to an attack by a ") then
+    return alarm("/sounds/Player_Attack.ogg", "Player Attack!")
+  end
+
+  if config.customMessage and config.customMessage.enabled then
+    local alertText = config.customMessage.value or ""
     if alertText:len() > 0 then
       text = text:lower()
       local parts = string.split(alertText, ",")
@@ -152,8 +184,8 @@ onTextMessage(function(mode, text)
         part = part:trim()
         part = part:lower()
 
-        if text:find(part) then
-          return alarm('/sounds/magnum.ogg', "Special Message!")
+        if part:len() > 0 and text:find(part) then
+          return alarm('/sounds/magnum.ogg', "Special Message: " .. part)
         end
       end
     end
@@ -163,58 +195,59 @@ end)
 -- default & private message
 onTalk(function(name, level, mode, text, channelId, pos)
   if not config.enabled then return end
-  if name == player:getName() then return end -- ignore self messages
-  if config.ignoreFriends.enabled and isFriend(name) then return end -- ignore friends if enabled
+  if player and name == player:getName() then return end -- ignore self messages
+  if config.ignoreFriends and config.ignoreFriends.enabled and isFriend and isFriend(name) then return end -- ignore friends if enabled
 
-  if mode == 1 and config.defaultMsg.enabled then
-    return alarm("/sounds/magnum.ogg", "Default Message!")
+  if mode == 1 and config.defaultMsg and config.defaultMsg.enabled then
+    return alarm("/sounds/magnum.ogg", "Default Message: " .. name)
   end
 
-  if mode == 4 and config.privateMsg.enabled then
-    return alarm("/sounds/Private_Message.ogg", "Private Message!")
+  if mode == 4 and config.privateMsg and config.privateMsg.enabled then
+    return alarm("/sounds/Private_Message.ogg", "Private Message: " .. name)
   end
 end)
 
--- health & mana
+-- health, mana & spectators
 macro(100, function() 
   if not config.enabled then return end
-  if config.lowHealth.enabled then
-    if hppercent() < config.lowHealth.value then
-      return alarm("/sounds/Low_Health.ogg", "Low Health!")
+  if config.lowHealth and config.lowHealth.enabled then
+    if hppercent() < (config.lowHealth.value or 20) then
+      return alarm("/sounds/Low_Health.ogg", "Low Health! (" .. hppercent() .. "%)")
     end
   end
 
-  if config.lowMana.enabled then
-    if hppercent() < config.lowMana.value then
-      return alarm("/sounds/Low_Mana.ogg", "Low Mana!")
+  if config.lowMana and config.lowMana.enabled then
+    if manapercent() < (config.lowMana.value or 20) then
+      return alarm("/sounds/Low_Mana.ogg", "Low Mana! (" .. manapercent() .. "%)")
     end
   end
 
+  local myZ = posz()
   for i, spec in ipairs(getSpectators()) do
-    if not spec:isLocalPlayer() and not (config.ignoreFriends.enabled and isFriend(spec)) then
-
-      if config.creatureDetected.enabled then
-        return alarm("/sounds/magnum.ogg", "Creature Detected!")
-      end
+    if not spec:isLocalPlayer() and spec:getPosition().z == myZ and not (config.ignoreFriends and config.ignoreFriends.enabled and isFriend and isFriend(spec)) then
 
       if spec:isPlayer() then 
-        if spec:isTimedSquareVisible() and config.playerAttack.enabled then
-          return alarm("/sounds/Player_Attack.ogg", "Player Attack!")
+        if spec:isTimedSquareVisible() and config.playerAttack and config.playerAttack.enabled then
+          return alarm("/sounds/Player_Attack.ogg", "Player Attack! (" .. spec:getName() .. ")")
         end
-        if config.playerDetected.enabled then
-          return alarm("/sounds/Player_Detected.ogg", "Player Detected!")
+        if config.playerDetected and config.playerDetected.enabled then
+          return alarm("/sounds/Player_Detected.ogg", "Player Detected! (" .. spec:getName() .. ")")
+        end
+      else
+        if config.creatureDetected and config.creatureDetected.enabled then
+          return alarm("/sounds/Creature_Detected.ogg", "Creature Detected! (" .. spec:getName() .. ")")
         end
       end
 
-      if config.creatureName.enabled then
+      if config.creatureName and config.creatureName.enabled and config.creatureName.value then
         local name = spec:getName():lower()
         local fragments = string.split(config.creatureName.value, ",")
         
-        for i=1,#fragments do
-          local frag = fragments[i]:trim():lower()
+        for j=1,#fragments do
+          local frag = fragments[j]:trim():lower()
 
-          if name:lower():find(frag) then
-            return alarm("/sounds/alarm.ogg", "Special Creature Detected!")
+          if frag:len() > 0 and name:find(frag) then
+            return alarm("/sounds/alarm.ogg", "Special Creature: " .. spec:getName())
           end
         end
       end
