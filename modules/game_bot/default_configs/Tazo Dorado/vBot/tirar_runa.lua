@@ -421,9 +421,10 @@ end
 
 updateStatus()
 
--- Determine if creature is a valid attack target (supports standard and custom OT monsters)
+-- Determine if creature is a valid monster target (STRICTLY excludes players)
 local function isTargetableCreature(spec)
   if not spec or spec:isLocalPlayer() then return false end
+  if spec:isPlayer() then return false end -- NEVER target any player
   if spec:isNpc() then return false end
   local p = spec:getPosition()
   if not p or p.z ~= posz() then return false end
@@ -431,11 +432,7 @@ local function isTargetableCreature(spec)
   if not hp or hp <= 0 then return false end
 
   if spec:isMonster() then return true end
-  if not spec:isPlayer() then return true end
-
-  if not config.safePvp and spec:isPlayer() and not spec:isPartyMember() then
-    return true
-  end
+  if not spec:isPlayer() and not spec:isNpc() then return true end
 
   return false
 end
@@ -565,7 +562,7 @@ end
 local lastRuneCast = 0
 local lastWalkApproach = 0
 
--- Fast auto-target macro (50ms): immediately attacks first target seen on screen
+-- Fast auto-target macro (50ms): immediately attacks first monster seen on screen
 macro(50, function()
   if not config.enabled then return end
   if isInPz() then return end
@@ -576,12 +573,12 @@ macro(50, function()
   local currentTarget = g_game.getAttackingCreature()
   if currentTarget then
     local tPos = currentTarget:getPosition()
-    if not tPos or tPos.z ~= pz or currentTarget:getHealthPercent() <= 0 then
+    if not tPos or tPos.z ~= pz or currentTarget:getHealthPercent() <= 0 or currentTarget:isPlayer() or not isTargetableCreature(currentTarget) then
       currentTarget = nil
     end
   end
 
-  -- If not attacking a valid target, attack the first/closest targetable creature on screen!
+  -- If not attacking a valid monster, attack the first/closest monster on screen!
   if not currentTarget then
     local closestDist = 999
     local closestCreature = nil
@@ -596,7 +593,7 @@ macro(50, function()
       end
     end
 
-    if closestCreature then
+    if closestCreature and not closestCreature:isPlayer() then
       g_game.attack(closestCreature)
     end
   end
@@ -631,7 +628,7 @@ macro(20, function()
   local currentTarget = g_game.getAttackingCreature()
   if currentTarget then
     local tPos = currentTarget:getPosition()
-    if not tPos or tPos.z ~= pz or currentTarget:getHealthPercent() <= 0 then
+    if not tPos or tPos.z ~= pz or currentTarget:getHealthPercent() <= 0 or currentTarget:isPlayer() or not isTargetableCreature(currentTarget) then
       currentTarget = nil
     end
   end
@@ -647,7 +644,7 @@ macro(20, function()
         closestMonster = m
       end
     end
-    if closestMonster then
+    if closestMonster and not closestMonster:isPlayer() then
       currentTarget = closestMonster
       g_game.attack(closestMonster)
     end
@@ -695,6 +692,11 @@ macro(20, function()
   -- SINGLE TARGET: Spell (e.g. exori frigo) or Rune (e.g. SD)
   local targetToShoot = currentTarget or aliveMonsters[1]
   if not targetToShoot then return end
+
+  -- ABSOLUTE SAFETY GUARD: Never shoot single spell or rune at a player!
+  if targetToShoot:isPlayer() or targetToShoot:isNpc() or not isTargetableCreature(targetToShoot) then
+    return
+  end
 
   if g_game.getAttackingCreature() ~= targetToShoot then
     g_game.attack(targetToShoot)

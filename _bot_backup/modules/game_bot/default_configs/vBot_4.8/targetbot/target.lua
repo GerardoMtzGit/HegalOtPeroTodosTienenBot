@@ -81,8 +81,8 @@ targetbotMacro = macro(100, function()
     local closestDist = 999
     local fallbackCreature = nil
     for _, creature in ipairs(specs) do
-      if not creature:isLocalPlayer() and not creature:isNpc() then
-        local isMob = creature:isMonster() or not creature:isPlayer()
+      if not creature:isLocalPlayer() and not creature:isNpc() and not creature:isPlayer() then
+        local isMob = creature:isMonster() or (not creature:isPlayer() and not creature:isNpc())
         local hppc = creature:getHealthPercent()
         if isMob and hppc and hppc > 0 and creature:getPosition().z == pPos.z then
           local dist = getDistanceBetween(pPos, creature:getPosition())
