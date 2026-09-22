@@ -60,12 +60,12 @@
           "enabled": true
         },
         {
-          "enabled": false,
-          "index": 2,
+          "sign": "<",
           "origin": "MP%",
-          "item": 237,
-          "value": 50,
-          "sign": "<"
+          "value": 90,
+          "item": 438,
+          "index": 2,
+          "enabled": true
         },
         {
           "enabled": true,
@@ -73,6 +73,14 @@
           "index": 3,
           "item": 23374,
           "origin": "MP%",
+          "sign": "<"
+        },
+        {
+          "enabled": false,
+          "index": 4,
+          "origin": "MP%",
+          "item": 237,
+          "value": 50,
           "sign": "<"
         }
       ]

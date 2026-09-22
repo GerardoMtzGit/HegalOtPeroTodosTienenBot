@@ -217,7 +217,7 @@ SpellHealing < FlatPanel
     font: cipsoftFont  
 
 ItemHealing < FlatPanel
-  size: 490 120
+  size: 490 125
 
   Label
     id: title
@@ -228,60 +228,6 @@ ItemHealing < FlatPanel
     color: #ff4513
     font: verdana-11px-rounded
 
-  SpellSourceBox
-    id: itemSource
-    anchors.top: itemList.top
-    anchors.right: parent.right
-    margin-right: 10
-    width: 128
-    font: verdana-11px-rounded
-
-  Label
-    id: whenItem
-    anchors.left: itemList.right
-    anchors.verticalCenter: prev.verticalCenter
-    text: When
-    margin-left: 7
-    font: verdana-11px-rounded
-
-  Label
-    id: isItem
-    anchors.left: itemList.right
-    anchors.top: whenItem.bottom
-    text: Is
-    margin-top: 9
-    margin-left: 7 
-    font: verdana-11px-rounded
-
-  SpellConditionBox
-    id: itemCondition
-    anchors.left: itemSource.left
-    anchors.top: itemSource.bottom   
-    marin-top: 15
-    width: 80
-    font: verdana-11px-rounded
-
-  TextEdit
-    id: itemValue
-    anchors.left: itemCondition.right
-    anchors.top: itemCondition.top
-    anchors.bottom: itemCondition.bottom
-    width: 49
-    font: verdana-11px-rounded
-
-  Label
-    id: useItem
-    anchors.left: isItem.left
-    anchors.top: isItem.bottom
-    text: Use  
-    margin-top: 15
-    font: verdana-11px-rounded
-
-  BotItem
-    id: itemId
-    anchors.left: itemCondition.left
-    anchors.top: itemCondition.bottom
-
   TextList
     id: itemList
     anchors.left: parent.left
@@ -289,7 +235,7 @@ ItemHealing < FlatPanel
     anchors.top: parent.top
     padding: 1
     padding-top: 2
-    width: 270  
+    width: 250  
     margin-top: 10
     margin-bottom: 7
     margin-left: 8
@@ -303,12 +249,87 @@ ItemHealing < FlatPanel
     step: 14
     pixels-scroll: true
 
+  Label
+    id: whenItem
+    anchors.left: itemList.right
+    anchors.top: itemList.top
+    text: When
+    margin-left: 10
+    margin-top: 2
+    font: verdana-11px-rounded
+
+  SpellSourceBox
+    id: itemSource
+    anchors.left: whenItem.right
+    anchors.right: parent.right
+    anchors.verticalCenter: whenItem.verticalCenter
+    margin-left: 10
+    margin-right: 10
+    font: verdana-11px-rounded
+
+  Label
+    id: isItem
+    anchors.left: whenItem.left
+    anchors.top: whenItem.bottom
+    text: Is
+    margin-top: 9
+    font: verdana-11px-rounded
+
+  SpellConditionBox
+    id: itemCondition
+    anchors.left: itemSource.left
+    anchors.top: isItem.top
+    margin-top: -3
+    width: 85
+    font: verdana-11px-rounded
+
+  TextEdit
+    id: itemValue
+    anchors.left: itemCondition.right
+    anchors.right: itemSource.right
+    anchors.top: itemCondition.top
+    anchors.bottom: itemCondition.bottom
+    margin-left: 5
+    font: verdana-11px-rounded
+
+  Label
+    id: useItem
+    anchors.left: isItem.left
+    anchors.top: isItem.bottom
+    text: Use  
+    margin-top: 14
+    font: verdana-11px-rounded
+
+  BotItem
+    id: itemId
+    anchors.left: itemSource.left
+    anchors.top: useItem.top
+    margin-top: -5
+    size: 26 26
+
+  Label
+    id: idLabel
+    anchors.left: prev.right
+    anchors.verticalCenter: prev.verticalCenter
+    margin-left: 8
+    text: ID:
+    font: verdana-11px-rounded
+
+  TextEdit
+    id: itemCustomId
+    anchors.left: prev.right
+    anchors.right: itemSource.right
+    anchors.verticalCenter: prev.verticalCenter
+    margin-left: 4
+    height: 20
+    font: verdana-11px-rounded
+
   Button
     id: addItem
-    anchors.right: itemValue.right
+    anchors.right: itemSource.right
     anchors.bottom: itemList.bottom
     text: Add
-    size: 40 17
+    size: 45 19
     font: cipsoftFont
 
   Button
@@ -317,7 +338,7 @@ ItemHealing < FlatPanel
     anchors.bottom: prev.bottom
     margin-right: 5
     text: Move Up
-    size: 55 17
+    size: 58 19
     font: cipsoftFont
 
   Button
@@ -326,7 +347,7 @@ ItemHealing < FlatPanel
     anchors.bottom: prev.bottom
     margin-right: 5
     text: Move Down
-    size: 55 17
+    size: 65 19
     font: cipsoftFont
 
 HealerPanel < Panel

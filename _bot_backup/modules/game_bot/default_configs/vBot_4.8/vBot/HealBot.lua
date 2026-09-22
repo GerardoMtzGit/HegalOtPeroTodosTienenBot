@@ -4,6 +4,77 @@ local standByItems = false
 local red = "#ff0800" -- "#ff0800" / #ea3c53 best
 local blue = "#7ef9ff"
 
+local PotionAliases = {
+  [438] = {23373, 23374, 438}, -- Ultimate Mana Potion (23373) / Ultimate Spirit (23374)
+  [23373] = {23373, 438},
+  [23374] = {23374, 438},
+  [144] = {238, 144},          -- Great Mana Potion
+  [238] = {238, 144},
+  [93]  = {237, 93},           -- Strong Mana Potion
+  [237] = {237, 93},
+  [56]  = {268, 56},           -- Mana Potion
+  [268] = {268, 56},
+  [379] = {7643, 379},         -- Ultimate Health Potion
+  [7643] = {7643, 379},
+  [625] = {23375, 625},        -- Supreme Health Potion
+  [23375] = {23375, 625},
+  [225] = {239, 225},          -- Great Health Potion
+  [239] = {239, 225},
+  [115] = {236, 115},          -- Strong Health Potion
+  [236] = {236, 115},
+  [50]  = {266, 50},           -- Health Potion
+  [266] = {266, 50},
+  [228] = {7642, 228},         -- Great Spirit Potion
+  [7642] = {7642, 228},
+}
+
+local function resolveItem(itemId)
+  if not itemId or itemId <= 0 then return nil, itemId end
+  
+  -- 1. Check direct item ID
+  local it = findItem(itemId)
+  if it then return it, itemId end
+
+  if getInventoryItem then
+    for slot = 1, 10 do
+      local invItem = getInventoryItem(slot)
+      if invItem and invItem:getId() == itemId then
+        return invItem, itemId
+      end
+    end
+  end
+
+  -- 2. Check potion aliases if not found
+  local candidates = PotionAliases[itemId]
+  if candidates then
+    for _, altId in ipairs(candidates) do
+      it = findItem(altId)
+      if it then return it, altId end
+      if getInventoryItem then
+        for slot = 1, 10 do
+          local invItem = getInventoryItem(slot)
+          if invItem and invItem:getId() == altId then
+            return invItem, altId
+          end
+        end
+      end
+    end
+  end
+
+  local fallbackId = (candidates and candidates[1]) or itemId
+  return nil, fallbackId
+end
+
+local function useHealItem(itemObj, itemId)
+  local ok = false
+  if itemObj then
+    ok = pcall(function() g_game.useWith(itemObj, player) end)
+  end
+  if not ok and itemId and itemId > 0 then
+    pcall(function() g_game.useInventoryItemWith(itemId, player) end)
+  end
+end
+
 setDefaultTab("HP")
 local healPanelName = "healbot"
 local ui = setupUI([[
@@ -284,7 +355,8 @@ if rootWidget then
           reindexTable(currentSettings.itemTable)
           label:destroy()
         end
-        label.id:setItemId(entry.item)
+        local _, previewId = resolveItem(entry.item)
+        label.id:setItemId(previewId or entry.item)
         label:setText(entry.origin .. entry.sign .. entry.value .. ": " .. entry.item)
       end
     end
@@ -399,9 +471,39 @@ if rootWidget then
     refreshSpells()
   end
 
+  local isSyncing = false
+  if healWindow.healer.items.itemCustomId then
+    healWindow.healer.items.itemCustomId.onTextChange = function(widget, text)
+      if isSyncing then return end
+      local num = tonumber(text)
+      isSyncing = true
+      if num and num > 0 then
+        local _, previewId = resolveItem(num)
+        healWindow.healer.items.itemId:setItemId(previewId or num)
+      else
+        healWindow.healer.items.itemId:setItemId(0)
+      end
+      isSyncing = false
+    end
+
+    healWindow.healer.items.itemId.onItemChange = function(widget)
+      if isSyncing then return end
+      local id = widget:getItemId()
+      if id > 0 then
+        local cur = tonumber(healWindow.healer.items.itemCustomId:getText())
+        if cur ~= id then
+          isSyncing = true
+          healWindow.healer.items.itemCustomId:setText(tostring(id))
+          isSyncing = false
+        end
+      end
+    end
+  end
+
   healWindow.healer.items.addItem.onClick = function(widget)
- 
-    local id = healWindow.healer.items.itemId:getItemId()
+    local customId = healWindow.healer.items.itemCustomId and tonumber(healWindow.healer.items.itemCustomId:getText())
+    local boxId = healWindow.healer.items.itemId:getItemId()
+    local id = (customId and customId > 0 and customId) or (boxId and boxId > 0 and boxId)
     local trigger = tonumber(healWindow.healer.items.itemValue:getText())
     local src = healWindow.healer.items.itemSource:getCurrentOption().text
     local eq = healWindow.healer.items.itemCondition:getCurrentOption().text
@@ -410,8 +512,12 @@ if rootWidget then
 
     if not trigger then
       warn("HealBot: incorrect trigger value!")
-      healWindow.healer.items.itemId:setItemId(0)
       healWindow.healer.items.itemValue:setText('')
+      return
+    end
+
+    if not id or id <= 0 then
+      warn("HealBot: incorrect item ID!")
       return
     end
 
@@ -435,14 +541,15 @@ if rootWidget then
       equasion = "="
     end
 
-    if id > 100 then
-      table.insert(currentSettings.itemTable, {index = #currentSettings.itemTable+1,item = id, sign = equasion, origin = source, value = trigger, enabled = true})
-      standBySpells = false
-      standByItems = false
-      refreshItems()
-      healWindow.healer.items.itemId:setItemId(0)
-      healWindow.healer.items.itemValue:setText('')
+    table.insert(currentSettings.itemTable, {index = #currentSettings.itemTable+1, item = id, sign = equasion, origin = source, value = trigger, enabled = true})
+    standBySpells = false
+    standByItems = false
+    refreshItems()
+    healWindow.healer.items.itemId:setItemId(0)
+    if healWindow.healer.items.itemCustomId then
+      healWindow.healer.items.itemCustomId:setText('')
     end
+    healWindow.healer.items.itemValue:setText('')
   end
 
   healWindow.closeButton.onClick = function(widget)
@@ -619,85 +726,69 @@ end)
 
 -- items
 macro(100, function()
+  if not currentSettings.enabled or not currentSettings.itemTable or #currentSettings.itemTable == 0 then return end
   if standByItems then return end
-  if not currentSettings.enabled or #currentSettings.itemTable == 0 then return end
   if currentSettings.Delay and vBot.isUsing then return end
   if currentSettings.MessageDelay and vBot.isUsingPotion then return end
 
-  if not currentSettings.MessageDelay then
-    delay(400)
+  local targetBotLooting = TargetBot and TargetBot.isOn and TargetBot.isOn() and TargetBot.Looting and TargetBot.Looting.getStatus and TargetBot.Looting.getStatus():len() > 0
+  if targetBotLooting and currentSettings.Interval then
+    delay(currentSettings.MessageDelay and 200 or 700)
+    return
   end
 
-  if TargetBot.isOn() and TargetBot.Looting.getStatus():len() > 0 and currentSettings.Interval then
-    if not currentSettings.MessageDelay then
-      delay(700)
-    else
-      delay(200)
-    end
-  end
+  local anyRuleTriggered = false
 
   for _, entry in pairs(currentSettings.itemTable) do
-    local item = findItem(entry.item)
-    if (not currentSettings.Visible or item) and entry.enabled then
+    if entry.enabled then
+      local conditionMet = false
+      
       if entry.origin == "HP%" then
-        if entry.sign == "=" and hppercent() == entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == ">" and hppercent() >= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == "<" and hppercent() <= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        end
+        local val = hppercent()
+        if entry.sign == "=" and val == entry.value then conditionMet = true
+        elseif entry.sign == ">" and val >= entry.value then conditionMet = true
+        elseif entry.sign == "<" and val <= entry.value then conditionMet = true end
       elseif entry.origin == "HP" then
-        if entry.sign == "=" and hp() == tonumberentry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == ">" and hp() >= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == "<" and hp() <= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        end
+        local val = hp()
+        local targetVal = tonumber(entry.value) or entry.value
+        if entry.sign == "=" and val == targetVal then conditionMet = true
+        elseif entry.sign == ">" and val >= targetVal then conditionMet = true
+        elseif entry.sign == "<" and val <= targetVal then conditionMet = true end
       elseif entry.origin == "MP%" then
-        if entry.sign == "=" and manapercent() == entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == ">" and manapercent() >= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == "<" and manapercent() <= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
+        local val = manapercent()
+        if entry.sign == "=" and val == entry.value then conditionMet = true
+        elseif entry.sign == ">" and val >= entry.value then conditionMet = true
+        elseif entry.sign == "<" and val <= entry.value then conditionMet = true end
+      elseif entry.origin == "MP" then
+        local val = mana()
+        local targetVal = tonumber(entry.value) or entry.value
+        if entry.sign == "=" and val == targetVal then conditionMet = true
+        elseif entry.sign == ">" and val >= targetVal then conditionMet = true
+        elseif entry.sign == "<" and val <= targetVal then conditionMet = true end
+      elseif entry.origin == "burst" then
+        local val = burstDamageValue and burstDamageValue() or 0
+        if entry.sign == "=" and val == entry.value then conditionMet = true
+        elseif entry.sign == ">" and val >= entry.value then conditionMet = true
+        elseif entry.sign == "<" and val <= entry.value then conditionMet = true end
+      end
+
+      if conditionMet then
+        local itemObj, actualId = resolveItem(entry.item)
+        if not currentSettings.Visible or itemObj then
+          anyRuleTriggered = true
+          useHealItem(itemObj, actualId)
+          if not currentSettings.MessageDelay then
+            delay(400)
+          end
           return
         end
-      elseif entry.origin == "MP" then
-        if entry.sign == "=" and mana() == entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == ">" and mana() >= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == "<" and mana() <= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        end   
-      elseif entry.origin == "burst" then
-        if entry.sign == "=" and burstDamageValue() == entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == ">" and burstDamageValue() >= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        elseif entry.sign == "<" and burstDamageValue() <= entry.value then
-          g_game.useInventoryItemWith(entry.item, player)
-          return
-        end   
       end
     end
   end
-  standByItems = true
+
+  if not anyRuleTriggered then
+    standByItems = true
+  end
 end)
 UI.Separator()
 
