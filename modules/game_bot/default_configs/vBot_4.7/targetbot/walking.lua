@@ -22,7 +22,9 @@ TargetBot.walk = function()
     end
   end
   local path = getPath(pos, dest, maxDist, params)
-  if path then
-    walk(path[1])
-  end
+    if g_game and g_game.walk then
+      g_game.walk(path[1])
+    elseif walk then
+      pcall(walk, path[1])
+    end
 end

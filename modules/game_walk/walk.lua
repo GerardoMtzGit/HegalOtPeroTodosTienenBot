@@ -113,6 +113,13 @@ local function walk(dir)
     return true
 end
 
+modules.game_walk = modules.game_walk or {}
+modules.game_walk.walk = walk
+if modules.game_walking then
+    modules.game_walking.walk = walk
+end
+
+
 --- Adds a walk event with an optional delay.
 local function addWalkEvent(dir, delay)
     if g_clock.millis() - lastCancelWalkTime > 20 then
