@@ -9,13 +9,13 @@ CaveBot.Config.setup = function()
   local ui = CaveBot.Config.ui
   local add = CaveBot.Config.add
   
-  add("ping", "Server ping", 100)
-  add("walkDelay", "Walk delay", 10)
+  add("ping", "Server ping", 10)
+  add("walkDelay", "Walk delay", 0)
   add("mapClick", "Use map click", false)
-  add("mapClickDelay", "Map click delay", 100)
+  add("mapClickDelay", "Map click delay", 0)
   add("ignoreFields", "Ignore fields", false)  
   add("skipBlocked", "Skip blocked path", false)  
-  add("useDelay", "Delay after use", 400)
+  add("useDelay", "Delay after use", 300)
 end
 
 CaveBot.Config.show = function()
@@ -33,6 +33,14 @@ CaveBot.Config.onConfigChange = function(configName, isEnabled, configData)
   if not configData then return end
   for k, v in pairs(configData) do
     if CaveBot.Config.value_setters[k] then
+      -- Auto-migrate old default delays to 0 as requested by user
+      if k == "walkDelay" and v == 10 then
+        v = 0
+      elseif k == "mapClickDelay" and v == 100 then
+        v = 0
+      elseif k == "ping" and v == 100 then
+        v = 10
+      end
       CaveBot.Config.value_setters[k](v)
     end
   end

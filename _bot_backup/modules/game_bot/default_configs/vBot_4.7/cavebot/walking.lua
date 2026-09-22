@@ -1,6 +1,6 @@
 -- walking
 local expectedDirs = {}
-local isWalking = {}
+local isWalking = false
 local walkPath = {}
 local walkPathIter = 0
 
@@ -10,24 +10,36 @@ CaveBot.resetWalking = function()
   isWalking = false
 end
 
+local function getWalkDelay(dir)
+  local duration = player:getStepDuration(false, dir)
+  local ping = CaveBot.Config.get("ping") or 0
+  local walkDelay = CaveBot.Config.get("walkDelay") or 0
+  -- Subtract server ping to pipeline walk packets so character runs fluidly without pausing
+  return math.max(0, duration - ping + walkDelay)
+end
+
 CaveBot.doWalking = function()
   if CaveBot.Config.get("mapClick") then
     return false
   end
-  if #expectedDirs == 0 then
+  if not isWalking or not walkPath or #walkPath == 0 then
     return false
   end
-  if #expectedDirs >= 3 then
-    CaveBot.resetWalking()
+  if #expectedDirs >= 2 then
+    return true
   end
   local dir = walkPath[walkPathIter]
   if dir then
     g_game.walk(dir, false)
     table.insert(expectedDirs, dir)
     walkPathIter = walkPathIter + 1
-    CaveBot.delay(CaveBot.Config.get("walkDelay") + player:getStepDuration(false, dir))
+    CaveBot.delay(getWalkDelay(dir))
     return true
   end
+  if #expectedDirs > 0 then
+    return true
+  end
+  CaveBot.resetWalking()
   return false  
 end
 
@@ -44,25 +56,26 @@ onPlayerPositionChange(function(newPos, oldPos)
     dir = 8 -- 8 is invalid dir, it's fine
   end
 
-  if not isWalking or not expectedDirs[1] then
-    -- some other walk action is taking place (for example use on ladder), wait
+  if newPos.z ~= oldPos.z then
+    -- Floor change (stairs/ladder/teleport), clear walking state
     walkPath = {}
-    CaveBot.delay(CaveBot.Config.get("ping") + player:getStepDuration(false, dir) + 150)
+    expectedDirs = {}
+    isWalking = false
+    CaveBot.delay(CaveBot.Config.get("ping") + 50)
+    return
+  end
+
+  if not isWalking or #expectedDirs == 0 then
     return
   end
   
-  if expectedDirs[1] ~= dir then
-    if CaveBot.Config.get("mapClick") then
-      CaveBot.delay(CaveBot.Config.get("walkDelay") + player:getStepDuration(false, dir))
-    else
-      CaveBot.delay(CaveBot.Config.get("mapClickDelay") + player:getStepDuration(false, dir))
+  if expectedDirs[1] == dir then
+    table.remove(expectedDirs, 1)  
+    if CaveBot.Config.get("mapClick") and #expectedDirs > 0 then
+      CaveBot.delay(CaveBot.Config.get("mapClickDelay"))
     end
-    return
-  end
-  
-  table.remove(expectedDirs, 1)  
-  if CaveBot.Config.get("mapClick") and #expectedDirs > 0 then
-    CaveBot.delay(CaveBot.Config.get("mapClickDelay") + player:getStepDuration(false, dir))
+  else
+    CaveBot.resetWalking()
   end
 end)
 
@@ -78,7 +91,7 @@ CaveBot.walkTo = function(dest, maxDist, params)
     if ret then
       isWalking = true
       expectedDirs = path
-      CaveBot.delay(CaveBot.Config.get("mapClickDelay") + math.max(CaveBot.Config.get("ping") + player:getStepDuration(false, dir), player:getStepDuration(false, dir) * 2))
+      CaveBot.delay(CaveBot.Config.get("mapClickDelay"))
     end
     return ret
   end
@@ -88,6 +101,6 @@ CaveBot.walkTo = function(dest, maxDist, params)
   walkPath = path
   walkPathIter = 2
   expectedDirs = { dir }
-  CaveBot.delay(CaveBot.Config.get("walkDelay") + player:getStepDuration(false, dir))
+  CaveBot.delay(getWalkDelay(dir))
   return true
 end

@@ -30,55 +30,70 @@ cavebotMacro = macro(20, function()
   end
   
   if CaveBot.doWalking() then
-    return -- executing walking3
+    return -- executing walking
   end
   
-  local actions = ui.list:getChildCount()
-  if actions == 0 then return end
-  local currentAction = ui.list:getFocusedChild()
-  if not currentAction then
-    currentAction = ui.list:getFirstChild()
-  end
-  local action = CaveBot.Actions[currentAction.action]  
-  local value = currentAction.value
-  local retry = false
-  if action then
-    local status, result = pcall(function()
-      CaveBot.resetWalking()
-      return action.callback(value, actionRetries, prevActionResult)
-    end)
-    if status then
-      if result == "retry" then
-        actionRetries = actionRetries + 1
-        retry = true
-      elseif type(result) == 'boolean' then
-        actionRetries = 0
-        prevActionResult = result
+  local loopLimit = 10
+  while loopLimit > 0 do
+    loopLimit = loopLimit - 1
+    
+    local actions = ui.list:getChildCount()
+    if actions == 0 then return end
+    local currentAction = ui.list:getFocusedChild()
+    if not currentAction then
+      currentAction = ui.list:getFirstChild()
+    end
+    local action = CaveBot.Actions[currentAction.action]  
+    local value = currentAction.value
+    local retry = false
+    local isSuccess = false
+    if action then
+      local status, result = pcall(function()
+        CaveBot.resetWalking()
+        return action.callback(value, actionRetries, prevActionResult)
+      end)
+      if status then
+        if result == "retry" then
+          actionRetries = actionRetries + 1
+          retry = true
+        elseif type(result) == 'boolean' then
+          actionRetries = 0
+          prevActionResult = result
+          isSuccess = result
+        else
+          warn("Invalid return from cavebot action (" .. currentAction.action .. "), should be \"retry\", false or true, is: " .. tostring(result))
+        end
       else
-        warn("Invalid return from cavebot action (" .. currentAction.action .. "), should be \"retry\", false or true, is: " .. tostring(result))
-      end
+        warn("warn while executing cavebot action (" .. currentAction.action .. "):\n" .. result)
+      end    
     else
-      warn("warn while executing cavebot action (" .. currentAction.action .. "):\n" .. result)
-    end    
-  else
-    warn("Invalid cavebot action: " .. currentAction.action)
+      warn("Invalid cavebot action: " .. currentAction.action)
+    end
+    
+    if retry then
+      return
+    end
+    
+    if currentAction ~= ui.list:getFocusedChild() then
+      -- focused child can change during action, get it again and reset state
+      currentAction = ui.list:getFocusedChild() or ui.list:getFirstChild()
+      actionRetries = 0
+      prevActionResult = true
+    end
+    local nextAction = ui.list:getChildIndex(currentAction) + 1
+    if nextAction > actions then
+      nextAction = 1
+    end
+    ui.list:focusChild(ui.list:getChildByIndex(nextAction))
+    
+    -- If the action succeeded (e.g. waypoint reached, label, gotolabel),
+    -- clear any leftover delay and immediately evaluate the next action with 0 delay!
+    if isSuccess then
+      cavebotMacro.delay = nil
+    else
+      break
+    end
   end
-  
-  if retry then
-    return
-  end
-  
-  if currentAction ~= ui.list:getFocusedChild() then
-    -- focused child can change durring action, get it again and reset state
-    currentAction = ui.list:getFocusedChild() or ui.list:getFirstChild()
-    actionRetries = 0
-    prevActionResult = true
-  end
-  local nextAction = ui.list:getChildIndex(currentAction) + 1
-  if nextAction > actions then
-    nextAction = 1
-  end
-  ui.list:focusChild(ui.list:getChildByIndex(nextAction))
 end)
 
 -- config, its callback is called immediately, data can be nil

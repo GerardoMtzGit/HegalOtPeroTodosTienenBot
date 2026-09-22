@@ -399,6 +399,8 @@ Panel
     refreshConfig(true)
   end)
   context.onUseWith(function(pos, itemId, target, subType)
+    -- Disabled auto recording of usewith
+    if true then return end
     if not autoRecording then
       return
     end

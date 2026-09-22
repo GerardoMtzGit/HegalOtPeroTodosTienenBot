@@ -322,14 +322,17 @@ CaveBot.registerAction("goto", "green", function(value, retries, prev)
   local minimapColor = g_map.getMinimapColor(pos)
   local stairs = (minimapColor >= 210 and minimapColor <= 213)
   
+  local dx = math.abs(pos.x - playerPos.x)
+  local dy = math.abs(pos.y - playerPos.y)
+  local prec = precision or 0
   if stairs then
-    if math.abs(pos.x-playerPos.x) == 0 and math.abs(pos.y-playerPos.y) <= 0 then
+    if dx == 0 and dy == 0 then
       noPath = 0
       return true -- already at position
     end
-  elseif math.abs(pos.x-playerPos.x) == 0 and math.abs(pos.y-playerPos.y) <= (precision or 1) then
-      noPath = 0
-      return true -- already at position
+  elseif dx <= prec and dy <= prec then
+    noPath = 0
+    return true -- already at position
   end
   -- check if there's a path to that place, ignore creatures and fields
   local path = findPath(playerPos, pos, maxDist, { ignoreNonPathable = true, precision = 1, ignoreCreatures = true, allowUnseen = true, allowOnlyVisibleTiles = false  })
