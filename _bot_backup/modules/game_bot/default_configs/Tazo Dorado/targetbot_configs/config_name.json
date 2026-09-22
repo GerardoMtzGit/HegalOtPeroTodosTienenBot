@@ -1,0 +1,45 @@
+{
+  "looting": {
+    "items": [
+
+    ],
+    "maxDanger": 10,
+    "minCapacity": 5000,
+    "containers": [
+
+    ],
+    "everyItem": false
+  },
+  "targeting": [
+    {
+      "lureDelay": 250,
+      "lureMin": 3,
+      "maxDistance": 10,
+      "anchorRange": 10,
+      "lureCount": 0,
+      "avoidAttacks": false,
+      "rePositionAmount": 5,
+      "lureMax": 7,
+      "regex": "^furious carnivor$|^masked$|^dark torturer$|^holy elemental$|^holy warden$|^rage squid$|^guardian of tales$|^burning book$|^vexclaw$|^hellflayer$|^many faces$|^knight's apparition$|^dawnfire asura$|^midnight asura$|^frost flower asura$|^true dawnfire asura$|^true midnight asura$|^true frost flower asura$|^grimeleech$|^plaguesmith$|^hellflayer$|^skeleton elite warrior$|^undead elite gladiator$|^sorcerer's apparition$|^druid's apparition$|^paladin's apparition$|^masked demon$|^furious carnivor$|^holy soul$|^fire spirit$|^vexclaw$|^hellflayer$|^dark torturer$|^lavaworm$|^lavafungus$|^lavaling$|^eyeless devourer$|^blemished spawn$|^blemished spawn$|^afflicted strider$|^stalking stalk$|^toxic flower$|^stalking stalk$|^frazzlemaw$|^silencer$|^guzzlemaw$|^many faces$|^knight's apparition$|^sorcerer's apparition$|^cursed prospector$|^evil prospector$|^freakish lost soul$|^goshnar's greed$|^goshnars hatred$|^goshnars malice$|^goshnars greed$|^goshnars spite$|^goshnars cruelty$|^goshnar's cruelty$|^crazed summer rearguard$|^thanatursus$|^insane siren$|^soul-broken harbinger$|^crazed winter rearguard$|^crazed winter vanguard$|^turbulent elemental$|^bony sea devil$|^capricious phantom$|^lost soul$|^undead dragon$|^dark torturer$|^falcon paladin$|^grand commander soeren$|^falcon knight$|^grand chaplain gaunder$|^grand canon dominus$|^goshnar's hatred$|^goshnar's malice$|^goshnar's spite$|^courage leech$|^vibrant phantom$|^vibrant phantom$|^cloak of terror$|^goshnar's megalomania$",
+      "chase": false,
+      "priority": 1,
+      "keepDistance": false,
+      "closeLure": false,
+      "danger": 1,
+      "keepDistanceRange": 1,
+      "lure": false,
+      "dynamicLureDelay": false,
+      "dynamicLure": true,
+      "faceMonster": false,
+      "lureCavebot": true,
+      "dontLoot": false,
+      "diamondArrows": true,
+      "delayFrom": 2,
+      "anchor": false,
+      "closeLureAmount": 3,
+      "rePosition": false,
+      "name": "Furious Carnivor,Masked,Dark Torturer,Holy Elemental,Holy Warden,Rage Squid,Guardian of Tales,Burning Book,Vexclaw,Hellflayer,Many Faces,Knight's Apparition,Dawnfire Asura,Midnight Asura,Frost Flower Asura,True Dawnfire Asura,True Midnight Asura,True Frost Flower Asura,Grimeleech,Plaguesmith,Hellflayer,Skeleton Elite Warrior,Undead Elite Gladiator,Sorcerer's Apparition,Druid's Apparition,Paladin's Apparition,Masked Demon,Furious Carnivor,Holy Soul,Fire Spirit,Vexclaw,Hellflayer,Dark Torturer,Lavaworm,Lavafungus,Lavaling,Eyeless Devourer,Blemished Spawn,Blemished Spawn,Afflicted Strider,Stalking Stalk,Toxic Flower,Stalking Stalk,Frazzlemaw,Silencer,Guzzlemaw,Many Faces,Knight's Apparition,Sorcerer's Apparition,Cursed Prospector,Evil Prospector,Freakish Lost Soul,Goshnar's Greed,Goshnars Hatred,Goshnars Malice,Goshnars Greed,Goshnars Spite,Goshnars Cruelty,Goshnar's Cruelty,Crazed Summer Rearguard,Thanatursus,Insane Siren,Soul-Broken Harbinger,Crazed Winter Rearguard,Crazed Winter Vanguard,Turbulent Elemental,Bony Sea Devil,Capricious Phantom,Lost Soul,Undead Dragon,dark torturer,Falcon Paladin,Grand Commander Soeren,Falcon Knight,Grand Chaplain Gaunder,Grand Canon Dominus,Goshnar's Hatred,Goshnar's Malice,Goshnar's Spite,Courage Leech,Vibrant Phantom,Vibrant Phantom,Cloak of Terror,Goshnar's Megalomania",
+      "rpSafe": true
+    }
+  ]
+}

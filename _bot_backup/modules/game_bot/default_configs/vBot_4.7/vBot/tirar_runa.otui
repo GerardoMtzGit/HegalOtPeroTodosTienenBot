@@ -1,0 +1,224 @@
+TirarRunaWindow < MainWindow
+  !text: tr('Configuracion: Tirar Runa / Spell')
+  size: 340 415
+  @onEscape: self:hide()
+
+  Label
+    id: modeTitle
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text: Modo de Disparo:
+    font: cipsoftFont
+    color: #ffaa00
+
+  ComboBox
+    id: modeCombo
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 3
+    height: 20
+
+  HorizontalSeparator
+    id: sep1
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+
+  Panel
+    id: singlePanel
+    anchors.top: sep1.bottom
+    anchors.left: parent.left
+    anchors.right: parent.horizontalCenter
+    margin-right: 5
+    margin-top: 6
+    height: 95
+    image-source: /images/ui/panel_flat
+    image-border: 4
+    padding: 4
+
+    Label
+      id: singleTitle
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      text: Runa / Spell 1 Monster:
+      font: cipsoftFont
+      color: #66ccff
+
+    ComboBox
+      id: singleCombo
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 3
+      height: 20
+
+    BotItem
+      id: singleItem
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 6
+      size: 34 34
+
+    Label
+      id: singleIdLabel
+      anchors.top: singleCombo.bottom
+      anchors.left: singleItem.right
+      margin-left: 8
+      margin-top: 6
+      text: Spell / ID:
+      font: cipsoftFont
+
+    TextEdit
+      id: singleId
+      anchors.top: singleIdLabel.bottom
+      anchors.left: singleItem.right
+      anchors.right: parent.right
+      margin-left: 8
+      margin-top: 2
+      height: 18
+      font: cipsoftFont
+
+  Panel
+    id: areaPanel
+    anchors.top: sep1.bottom
+    anchors.left: parent.horizontalCenter
+    anchors.right: parent.right
+    margin-left: 5
+    margin-top: 6
+    height: 95
+    image-source: /images/ui/panel_flat
+    image-border: 4
+    padding: 4
+
+    Label
+      id: areaTitle
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      text: Runa Varios (Area):
+      font: cipsoftFont
+      color: #ff9966
+
+    ComboBox
+      id: areaCombo
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 3
+      height: 20
+
+    BotItem
+      id: areaItem
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      margin-top: 6
+      size: 34 34
+
+    Label
+      id: areaIdLabel
+      anchors.top: areaCombo.bottom
+      anchors.left: areaItem.right
+      margin-left: 8
+      margin-top: 6
+      text: Item ID:
+      font: cipsoftFont
+
+    TextEdit
+      id: areaId
+      anchors.top: areaIdLabel.bottom
+      anchors.left: areaItem.right
+      anchors.right: parent.right
+      margin-left: 8
+      margin-top: 2
+      height: 18
+      font: cipsoftFont
+
+  HorizontalSeparator
+    id: sep2
+    anchors.top: singlePanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+
+  Label
+    id: minMonstersLabel
+    anchors.top: sep2.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 6
+    text: Min. Monsters para Area: 2
+    font: cipsoftFont
+
+  HorizontalScrollBar
+    id: minMonsters
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 3
+    minimum: 2
+    maximum: 8
+    step: 1
+
+  Label
+    id: delayLabel
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 6
+    text: Delay entre Runas: 201 ms
+    font: cipsoftFont
+
+  HorizontalScrollBar
+    id: delay
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 3
+    minimum: 50
+    maximum: 2000
+    step: 1
+
+  CheckBox
+    id: singleApproach
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    text: Acercarse a 3 SQM si usa Spell Single
+    font: cipsoftFont
+
+  CheckBox
+    id: autoTarget
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    text: Auto-apuntar (donde pegue a mas monstruos)
+    font: cipsoftFont
+
+  CheckBox
+    id: safePvp
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    text: PVP Seguro (usar single si hay jugadores)
+    font: cipsoftFont
+
+  HorizontalSeparator
+    id: sep3
+    anchors.bottom: closeButton.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: 8
+
+  Button
+    id: closeButton
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    size: 55 21
+    text: Cerrar
+    font: cipsoftFont

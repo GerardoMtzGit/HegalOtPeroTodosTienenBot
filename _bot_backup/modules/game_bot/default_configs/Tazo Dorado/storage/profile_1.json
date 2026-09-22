@@ -1,0 +1,473 @@
+{
+  "BotServerChannel": "2604565570128",
+  "combobot": {
+    "attackSpellEnabled": false,
+    "attackLeaderTargetEnabled": false,
+    "attackItemEnabled": true,
+    "shootLeader": "",
+    "onCastEnabled": false,
+    "followLeaderEnabled": true,
+    "serverEnabled": true,
+    "commandsEnabled": true,
+    "onSayEnabled": false,
+    "attack": "",
+    "enabled": true,
+    "spell": "",
+    "onShootEnabled": false,
+    "attackItemToggle": false,
+    "serverTriggers": true,
+    "item": 3155,
+    "sayPhrase": "",
+    "serverLeaderTarget": true,
+    "serverLeader": "Caldo De Perro",
+    "sayLeader": "Caldo De Perro",
+    "follow": "",
+    "castLeader": ""
+  },
+  "extras": {
+    "rope": 9596,
+    "pathfinding": true,
+    "machete": 9596,
+    "timers": true,
+    "looting": 30,
+    "gotoMaxDistance": 30,
+    "reUse": false,
+    "holdMwall": true,
+    "checkPlayer": true,
+    "separatePm": false,
+    "suppliesControl": false,
+    "killUnder": 1,
+    "joinBot": false,
+    "lootLast": true,
+    "holdMwHot": "F5",
+    "stake": false,
+    "shovel": 9596,
+    "reachable": false,
+    "oberon": true,
+    "autoOpenDoors": true,
+    "holdWgHot": "F6",
+    "nextBackpack": true,
+    "title": true,
+    "huntRoutes": 50,
+    "antiKick": true,
+    "talkDelay": 800,
+    "scythe": 9596,
+    "useAll": "space",
+    "highlightTarget": true,
+    "height": 360,
+    "bless": true
+  },
+  "caveBotTasker": {
+    "max": 0,
+    "monster": "",
+    "inProgress": false,
+    "count": 5,
+    "taskName": ""
+  },
+  "autoEquip": [
+    {
+      "item1": 0,
+      "title": "Auto Equip",
+      "item2": 3081,
+      "on": false,
+      "slot": 2
+    },
+    {
+      "item1": 0,
+      "title": "Auto Equip",
+      "item2": 3048,
+      "on": false,
+      "slot": 9
+    }
+  ],
+  "dropper": {
+    "enabled": false,
+    "trashItems": [
+      {
+        "count": 1,
+        "id": 283
+      },
+      {
+        "count": 1,
+        "id": 3461
+      },
+      {
+        "count": 1,
+        "id": 285
+      }
+    ],
+    "useItems": [
+      {
+        "count": 1,
+        "id": 21203
+      },
+      {
+        "count": 1,
+        "id": 14758
+      }
+    ],
+    "capItems": [
+      {
+        "count": 1,
+        "id": 21175
+      }
+    ]
+  },
+  "bestHeal": 2180,
+  "followLeader": "Caldo De Perro",
+  "caveBot": {
+    "backOffline": false,
+    "backTrainers": false,
+    "forceRefill": false,
+    "backStop": false
+  },
+  "analyzers": {
+    "lootChannel": true,
+    "customPrices": [
+
+    ],
+    "trackedLoot": {
+      "34109": 3250806
+    },
+    "rarityFrames": true
+  },
+  "renameContainers": {
+    "sort": true,
+    "forceOpen": true,
+    "list": [
+      {
+        "items": [
+          {
+            "id": 22721,
+            "count": 39
+          },
+          {
+            "id": 38089,
+            "count": 30
+          },
+          {
+            "id": 38101,
+            "count": 11
+          }
+        ],
+        "value": "Main",
+        "enabled": true,
+        "min": false,
+        "item": 37707
+      },
+      {
+        "items": [
+          {
+            "id": 23374,
+            "count": 100
+          },
+          {
+            "id": 237,
+            "count": 0
+          }
+        ],
+        "value": "pociones",
+        "enabled": true,
+        "min": false,
+        "item": 9601
+      },
+      {
+        "items": [
+          {
+            "id": 25757,
+            "count": 100
+          }
+        ],
+        "value": "Flechas",
+        "enabled": true,
+        "min": false,
+        "item": 35849
+      }
+    ],
+    "purse": false,
+    "enabled": false,
+    "height": 170
+  },
+  "bestHit": 11587,
+  "specialDeposit": {
+    "height": 380,
+    "items": [
+
+    ]
+  },
+  "EquipperPanel": {
+    "bosses": [
+
+    ],
+    "enabled": false,
+    "rules": [
+      {
+        "data": [
+          3396,
+          3397,
+          3398,
+          23477,
+          3081,
+          28718,
+          35848,
+          3048,
+          0
+        ],
+        "mainCondition": 4,
+        "optionalCondition": 5,
+        "visible": true,
+        "mainValue": 70,
+        "enabled": true,
+        "name": "ssa y miight",
+        "relation": "-"
+      }
+    ]
+  },
+  "playerList": {
+    "enemyList": [
+
+    ],
+    "outfits": false,
+    "groupMembers": true,
+    "friendList": [
+
+    ],
+    "highlight": false,
+    "marks": false,
+    "blackList": [
+
+    ]
+  },
+  "alarms": {
+    "playerDetected": false,
+    "creatureDetected": false,
+    "healthBelow": false,
+    "healthValue": 40,
+    "playerDetectedLogout": false,
+    "playerAttack": false,
+    "manaBelow": false,
+    "ignoreFriends": true,
+    "bossName": "[B]",
+    "messageText": "",
+    "manaValue": 50,
+    "enabled": false,
+    "warnBoss": false,
+    "privateMessage": false
+  },
+  "_icons": {
+    "SSA": {
+      "y": 0.05,
+      "x": 0.01,
+      "enabled": false
+    }
+  },
+  "checkVersion": 1728584370,
+  "_configs": {
+    "cavebot_configs": {
+      "selected": "soul_hielo",
+      "enabled": true
+    },
+    "targetbot_configs": {
+      "enabled": true,
+      "selected": "config_name"
+    }
+  },
+  "pushmax": {
+    "pushMaxRuneId": 3188,
+    "mwallBlockId": 2128,
+    "pushDelay": 1060,
+    "enabled": false,
+    "pushMaxKey": "PageUp"
+  },
+  "autofollow": {
+    "player": "Daree"
+  },
+  "BOTserver": {
+    "manaInfo": true,
+    "mwallInfo": true,
+    "mwalls": [
+
+    ],
+    "outfit": true,
+    "broadcasts": true,
+    "vocation": true
+  },
+  "autoParty": {
+    "onMove": true,
+    "enabled": true,
+    "leaderName": "Chile Tatemado",
+    "autoPartyList": [
+      "Daree",
+      "Planaria",
+      "Luca Shrena",
+      "Taquitos De Sio",
+      "Taquitos De Flecha",
+      "Chilaquil Mamalon",
+      "Tacos De Yakult",
+      "Tostada D'camaron"
+    ]
+  },
+  "_macros": {
+    "": false,
+    "Follow Change": true,
+    "Cast Food": false,
+    "AntiRS & Msg": true,
+    "Quiver Manager": false,
+    "EquipSSA": false,
+    "Follow": false,
+    "Eat Food": true,
+    "Exchange money": true,
+    "Depot Withdraw": true,
+    "use divine": true,
+    "Hold Target": true,
+    "EquipRing": false,
+    "Send message on trade": true
+  },
+  "moneyItems": [
+    {
+      "count": 1,
+      "id": 3031
+    },
+    {
+      "count": 1,
+      "id": 3035
+    },
+    {
+      "count": 100,
+      "id": 3043
+    }
+  ],
+  "sendPartyAnalyzerData": false,
+  "newHealer": {
+    "vocations": [
+
+    ],
+    "priorities": [
+      {
+        "custom": true,
+        "enabled": false,
+        "name": "Custom Spell"
+      },
+      {
+        "strong": true,
+        "enabled": true,
+        "name": "Exura Gran Sio"
+      },
+      {
+        "normal": true,
+        "enabled": true,
+        "name": "Exura Sio"
+      },
+      {
+        "enabled": true,
+        "name": "Exura Gran Mas Res",
+        "area": true
+      },
+      {
+        "health": true,
+        "enabled": true,
+        "name": "Health Item"
+      },
+      {
+        "enabled": true,
+        "name": "Mana Item",
+        "mana": true
+      }
+    ],
+    "enabled": false,
+    "groups": [
+
+    ],
+    "customPlayers": [
+
+    ],
+    "conditions": {
+      "druids": false,
+      "knights": true,
+      "friends": false,
+      "botserver": false,
+      "paladins": true,
+      "sorcerers": false,
+      "party": true,
+      "guild": false
+    },
+    "settings": [
+      {
+        "type": "HealItem",
+        "text": "Mana Item ",
+        "value": 268
+      },
+      {
+        "type": "HealScroll",
+        "text": "Item Range: ",
+        "value": 6
+      },
+      {
+        "type": "HealItem",
+        "text": "Health Item ",
+        "value": 3160
+      },
+      {
+        "type": "HealScroll",
+        "text": "Mas Res Players: ",
+        "value": 2
+      },
+      {
+        "type": "HealScroll",
+        "text": "Heal Friend at: ",
+        "value": 80
+      },
+      {
+        "type": "HealScroll",
+        "text": "Use Gran Sio at: ",
+        "value": 80
+      },
+      {
+        "type": "HealScroll",
+        "text": "Min Player HP%: ",
+        "value": 80
+      },
+      {
+        "type": "HealScroll",
+        "text": "Min Player MP%: ",
+        "value": 50
+      }
+    ]
+  },
+  "autoTradeMessage": "!ticket",
+  "ingame_hotkeys": "macro(500, \"use divine\", function()\n    if isInPz() then return end\n    local monsters = 0\n    for i, mob in ipairs(getSpectators(posz())) do\n        if mob:isMonster() and getDistanceBetween(player:getPosition(), mob:getPosition()) >= 2 and getDistanceBetween(player:getPosition(), mob:getPosition()) <= 6 then\n            monsters = monsters + 1\n        end\n    end\n\n    if (monsters >= 2 and manapercent() > 50 and not modules.game_cooldown.isCooldownIconActive(101)) then\n       say(\"exana amp res\")\n    end\nend)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n--[[\n  Script made by Lee (Discord: l33_) - www.trainorcreations.com\n  If you want to support my work, feel free to donate at https://trainorcreations.com/donate\n  PS. Stop ripping off my work and selling it as your own.\n]]--\nlocal panelName = \"autoParty\"\nlocal autopartyui = setupUI([[\nPanel\n  height: 38\n\n  BotSwitch\n    id: status\n    anchors.top: parent.top\n    anchors.left: parent.left\n    text-align: center\n    width: 130\n    height: 18\n    text: Auto Party\n\n  Button\n    id: editPlayerList\n    anchors.top: prev.top\n    anchors.left: prev.right\n    anchors.right: parent.right\n    margin-left: 3\n    height: 17\n    text: Setup\n\n  Button\n    id: ptLeave\n    text: Leave Party\n    anchors.left: parent.left\n    anchors.top: prev.bottom\n    width: 86\n    height: 17\n    margin-top: 3\n    color: #ee0000\n\n  Button\n    id: ptShare\n    text: Share XP\n    anchors.left: prev.right\n    anchors.top: prev.top\n    margin-left: 5\n    height: 17\n    width: 86\n\n  ]], parent)\n\ng_ui.loadUIFromString([[\nAutoPartyName < Label\n  background-color: alpha\n  text-offset: 2 0\n  focusable: true\n  height: 16\n\n  $focus:\n    background-color: #00000055\n\n  Button\n    id: remove\n    text: x\n    anchors.right: parent.right\n    margin-right: 15\n    width: 15\n    height: 15\n\nAutoPartyListWindow < MainWindow\n  text: Auto Party\n  size: 180 275\n  @onEscape: self:hide()\n\n  Label\n    id: lblLeader\n    anchors.left: parent.left\n    anchors.right: parent.right\n    anchors.top: parent.top\n    anchors.right: parent.right\n    text-align: center\n    text: Leader Name\n\n  TextEdit\n    id: txtLeader\n    anchors.left: parent.left\n    anchors.right: parent.right\n    anchors.top: prev.bottom\n    margin-top: 5\n\n  Label\n    id: lblParty\n    anchors.left: parent.left\n    anchors.top: prev.bottom\n    anchors.right: parent.right\n    margin-top: 5\n    text-align: center\n    text: Party List\n\n  TextList\n    id: lstAutoParty\n    anchors.top: prev.bottom\n    anchors.left: parent.left\n    anchors.right: parent.right\n    margin-top: 5\n    margin-bottom: 5\n    padding: 1\n    height: 83\n    vertical-scrollbar: AutoPartyListListScrollBar\n\n  VerticalScrollBar\n    id: AutoPartyListListScrollBar\n    anchors.top: lstAutoParty.top\n    anchors.bottom: lstAutoParty.bottom\n    anchors.right: lstAutoParty.right\n    step: 14\n    pixels-scroll: true\n\n  TextEdit\n    id: playerName\n    anchors.left: parent.left\n    anchors.top: lstAutoParty.bottom\n    margin-top: 5\n    width: 120\n\n  Button\n    id: addPlayer\n    text: +\n    anchors.right: parent.right\n    anchors.left: prev.right\n    anchors.top: prev.top\n    margin-left: 3\n\n  HorizontalSeparator\n    id: separator\n    anchors.right: parent.right\n    anchors.left: parent.left\n    anchors.top: prev.bottom\n    margin-top: 8\n\n  CheckBox\n    id: creatureMove\n    anchors.left: parent.left\n    anchors.right: parent.right\n    anchors.top: prev.bottom\n    margin-top: 6\n    text: Invite on move\n    tooltip: This will activate the invite on player move.\n\n  HorizontalSeparator\n    id: separator\n    anchors.right: parent.right\n    anchors.left: parent.left\n    anchors.bottom: closeButton.top\n    margin-bottom: 8\n\n  Button\n    id: closeButton\n    text: Close\n    font: cipsoftFont\n    anchors.right: parent.right\n    anchors.bottom: parent.bottom\n    size: 45 21\n]])\n\nif not storage[panelName] then\n    storage[panelName] = {\n        leaderName = 'Leader',\n        autoPartyList = {},\n        enabled = true,\n    }\nend\n\nif not storage[panelName].onMove then\n    storage[panelName].onMove = false\nend\nrootWidget = g_ui.getRootWidget()\nif rootWidget then\n    tcAutoParty = autopartyui.status\n\n    autoPartyListWindow = UI.createWindow('AutoPartyListWindow', rootWidget)\n    autoPartyListWindow:hide()\n\n    autopartyui.editPlayerList.onClick = function(widget)\n        autoPartyListWindow:show()\n        autoPartyListWindow:raise()\n        autoPartyListWindow:focus()\n    end\n\n    autopartyui.ptShare.onClick = function(widget)\n        g_game.partyShareExperience(not player:isPartySharedExperienceActive())\n    end\n\n    autopartyui.ptLeave.onClick = function(widget)\n        g_game.partyLeave()\n    end\n\n    autoPartyListWindow.closeButton.onClick = function(widget)\n        autoPartyListWindow:hide()\n    end\n\n    if storage[panelName].autoPartyList and #storage[panelName].autoPartyList > 0 then\n        for _, pName in ipairs(storage[panelName].autoPartyList) do\n            local label = g_ui.createWidget(\"AutoPartyName\", autoPartyListWindow.lstAutoParty)\n            label.remove.onClick = function(widget)\n                table.removevalue(storage[panelName].autoPartyList, label:getText())\n                label:destroy()\n            end\n            label:setText(pName)\n        end\n    end\n    autoPartyListWindow.addPlayer.onClick = function(widget)\n        local playerName = autoPartyListWindow.playerName:getText()\n        if playerName:len() > 0 and not (table.contains(storage[panelName].autoPartyList, playerName, true)\n                or storage[panelName].leaderName == playerName) then\n            table.insert(storage[panelName].autoPartyList, playerName)\n            local label = g_ui.createWidget(\"AutoPartyName\", autoPartyListWindow.lstAutoParty)\n            label.remove.onClick = function(widget)\n                table.removevalue(storage[panelName].autoPartyList, label:getText())\n                label:destroy()\n            end\n            label:setText(playerName)\n            autoPartyListWindow.playerName:setText('')\n        end\n    end\n\n    autopartyui.status:setOn(storage[panelName].enabled)\n    autopartyui.status.onClick = function(widget)\n        storage[panelName].enabled = not storage[panelName].enabled\n        widget:setOn(storage[panelName].enabled)\n    end\n\n    autoPartyListWindow.creatureMove:setChecked(storage[panelName].onMove)\n    autoPartyListWindow.creatureMove.onClick = function(widget)\n        storage[panelName].onMove = not storage[panelName].onMove\n        widget:setChecked(storage[panelName].onMove)\n    end\n\n    autoPartyListWindow.playerName.onKeyPress = function(self, keyCode, keyboardModifiers)\n        if not (keyCode == 5) then\n            return false\n        end\n        autoPartyListWindow.addPlayer.onClick()\n        return true\n    end\n\n    autoPartyListWindow.playerName.onTextChange = function(widget, text)\n        if table.contains(storage[panelName].autoPartyList, text, true) then\n            autoPartyListWindow.addPlayer:setColor(\"#FF0000\")\n        else\n            autoPartyListWindow.addPlayer:setColor(\"#FFFFFF\")\n        end\n    end\n\n    autoPartyListWindow.txtLeader.onTextChange = function(widget, text)\n        storage[panelName].leaderName = text\n    end\n    autoPartyListWindow.txtLeader:setText(storage[panelName].leaderName)\n\n    onTextMessage(function(mode, text)\n        if tcAutoParty:isOn() then\n            if mode == 20 then\n                if text:find(\"has joined the party\") then\n                    local data = regexMatch(text, \"([a-z A-Z-]*) has joined the party\")[1][2]\n                    if data then\n                        if table.contains(storage[panelName].autoPartyList, data, true) then\n                            if not player:isPartySharedExperienceActive() then\n                                g_game.partyShareExperience(true)\n                            end\n                        end\n                    end\n                elseif text:find(\"has invited you\") then\n                    if player:getName():lower() == storage[panelName].leaderName:lower() then\n                        return\n                    end\n                    local data = regexMatch(text, \"([a-z A-Z-]*) has invited you\")[1][2]\n                    if data then\n                        if storage[panelName].leaderName:lower() == data:lower() then\n                            local leader = getCreatureByName(data, true)\n                            if leader then\n                                g_game.partyJoin(leader:getId())\n                                return\n                            end\n                        end\n                    end\n                end\n            end\n        end\n    end)\n\n    function creatureInvites(creature)\n        if not creature:isPlayer() or creature == player then return end\n        if creature:getName():lower() == storage[panelName].leaderName:lower() then\n            if creature:getShield() == 1 then\n                g_game.partyJoin(creature:getId())\n                return\n            end\n        end\n        if player:getName():lower() ~= storage[panelName].leaderName:lower() then return end\n        if not table.contains(storage[panelName].autoPartyList, creature:getName(), true) then return end\n        if creature:isPartyMember() or creature:getShield() == 2 then return end\n        g_game.partyInvite(creature:getId())\n    end\n\n    onCreatureAppear(function(creature)\n        if tcAutoParty:isOn() then\n            creatureInvites(creature)\n        end\n    end)\n    onCreaturePositionChange(function(creature, newPos, oldPos)\n        if tcAutoParty:isOn() and storage[panelName].onMove then\n            creatureInvites(creature)\n        end\n    end)\nend\n\n\n\n\nUI.Label(\"Auto Follow\")\n\n\naddTextEdit(\"followleader\", storage.followLeader or \"player name\", function(widget, text)\n  storage.followLeader = text\nend)\n\n\n--Code\nlocal toFollowPos = {}\nlocal followMacro = macro(20, \"Follow\", function()\n  local target = getCreatureByName(storage.followLeader)\n  if target then\n    local tpos = target:getPosition()\n    toFollowPos[tpos.z] = tpos\n  end\n\n\n  if player:isWalking() then return end\n  local p = toFollowPos[posz()]\n  if not p then return end\n\n\n  if autoWalk(p, 20, {ignoreNonPathable=false, precision=2, marginMin=1, marginMax=2}) then\n    delay(100)\n  end\nend)\n\n\nonCreaturePositionChange(function(creature, oldPos, newPos)\n  if creature:getName() == storage.followLeader then\n    toFollowPos[newPos.z] = newPos\n  end\nend)\n\n\nUI.Separator()\n\n\n",
+  "foodItems": [
+    {
+      "id": 3582,
+      "count": 1
+    },
+    {
+      "id": 3577,
+      "count": 1
+    },
+    {
+      "id": 23374,
+      "count": 0
+    },
+    {
+      "count": 1,
+      "id": 3607
+    },
+    {
+      "count": 1,
+      "id": 3585
+    },
+    {
+      "count": 1,
+      "id": 3592
+    },
+    {
+      "count": 1,
+      "id": 3600
+    },
+    {
+      "count": 1,
+      "id": 3601
+    }
+  ]
+}
