@@ -144,7 +144,7 @@ local function updateVisuals()
     manaIconWidget:setTooltip("Icono de Mana (ID " .. (config.itemId or 438) .. ")\n" ..
                               "Clic: Curar mana al " .. target .. "%\n" ..
                               "Estado: " .. (isDrinking and ("CURANDO AL " .. target .. "% (" .. curMp .. "%)") or "Listo") .. "\n" ..
-                              "Clic Derecho: Cancelar curacion\n" ..
+                              "Clic Derecho: Cancelar\n" ..
                               "Ctrl + Arrastrar para mover")
   end
 
@@ -163,7 +163,6 @@ local function triggerManaHeal(forceState)
   local target = tonumber(config.targetPercent) or 90
   local curMp = manapercent()
 
-  -- If explicitly cancelled (e.g. right click)
   if forceState == false then
     isDrinking = false
     emptyAttempts = 0
@@ -171,7 +170,6 @@ local function triggerManaHeal(forceState)
     return
   end
 
-  -- If mana is already >= target, show FULL and don't drink
   if curMp >= target then
     isDrinking = false
     emptyAttempts = 0
@@ -187,12 +185,10 @@ local function triggerManaHeal(forceState)
     return
   end
 
-  -- ACTIVATE: Must not stop until mana reaches target!
   isDrinking = true
   emptyAttempts = 0
   updateVisuals()
 
-  -- Instant first drink
   local used = drinkOnce()
   if not used then
     emptyAttempts = emptyAttempts + 1
@@ -210,7 +206,6 @@ local function createOrUpdateIcon()
   manaIconWidget:setMarginLeft(config.pos and config.pos.x or 20)
   manaIconWidget:setMarginTop(config.pos and config.pos.y or 30)
 
-  -- Instant response on press
   manaIconWidget.onMousePress = function(self, mousePos, mouseButton)
     if mouseButton == MouseLeftButton or mouseButton == 1 or not mouseButton then
       if not g_keyboard.isCtrlPressed() or not config.lockPosition then
@@ -219,7 +214,6 @@ local function createOrUpdateIcon()
     end
   end
 
-  -- Instant response on release
   manaIconWidget.onMouseRelease = function(self, mousePos, mouseButton)
     if self.isBeingDragged then
       self.isBeingDragged = false
@@ -235,7 +229,6 @@ local function createOrUpdateIcon()
     end
   end
 
-  -- Fallback onClick
   manaIconWidget.onClick = function(self)
     triggerManaHeal(true)
   end
@@ -274,14 +267,16 @@ local function createOrUpdateIcon()
 end
 
 createOrUpdateIcon()
-onGameStart(function()
-  createOrUpdateIcon()
-end)
+if not manaIconWidget then
+  schedule(400, function()
+    createOrUpdateIcon()
+  end)
+end
 
 -- UI inside the "Iconos" tab
 local tabUi = setupUI([[
 Panel
-  height: 290
+  height: 295
 
   BotSwitch
     id: enabledSwitch
@@ -318,7 +313,7 @@ Panel
     height: 22
 
     Label
-      text: Subir mana al:
+      text: Llenar mana al:
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
       font: verdana-11px-rounded
@@ -454,7 +449,7 @@ Panel
     anchors.right: parent.right
     margin-top: 4
     height: 19
-    text: Curar Mana Ahora (Hasta el 90%)
+    text: Curar Mana Ahora (Llenar al %)
     font: cipsoftFont
 ]])
 
@@ -550,7 +545,7 @@ tabUi.testBtn.onClick = function()
 end
 
 UI.Separator()
-UI.Label("Clic en el icono: Curar hasta el 90% ininterrumpidamente.\nClic derecho: Cancelar.")
+UI.Label("Clic en el icono: Llena el mana hasta el % configurado.")
 UI.Separator()
 
 -- Continuous healing loop - DOES NOT STOP until target % is reached!

@@ -47,7 +47,7 @@ ManaIconWidget < UIButton
     anchors.bottom: parent.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     margin-bottom: 2
-    font: verdana-9px
+    font: terminus-10px
     color: #93c5fd
     phantom: true
     text: 90%
