@@ -22,7 +22,7 @@ macro(100, "Hold Target", function()
             local sameFloor = spec:getPosition().z == posz()
             local oldTarget = spec:getId() == targetID
             
-            if sameFloor and oldTarget then
+            if sameFloor and oldTarget and spec:getHealthPercent() > 0 then
                 attack(spec)
             end
         end

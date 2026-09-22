@@ -407,6 +407,9 @@ ui.title:setOn(config.enabled)
 ui.title.onClick = function(widget)
   config.enabled = not config.enabled
   widget:setOn(config.enabled)
+  if config.enabled then
+    lastRuneCast = 0
+  end
   updateStatus()
 end
 
@@ -417,6 +420,43 @@ ui.configBtn.onClick = function()
 end
 
 updateStatus()
+
+-- Determine if creature is a valid attack target (supports standard and custom OT monsters)
+local function isTargetableCreature(spec)
+  if not spec or spec:isLocalPlayer() then return false end
+  if spec:isNpc() then return false end
+  local p = spec:getPosition()
+  if not p or p.z ~= posz() then return false end
+  local hp = spec:getHealthPercent()
+  if not hp or hp <= 0 then return false end
+
+  if spec:isMonster() then return true end
+  if not spec:isPlayer() then return true end
+
+  if not config.safePvp and spec:isPlayer() and not spec:isPartyMember() then
+    return true
+  end
+
+  return false
+end
+
+-- Reliable rune caster: uses hotkey inventory first, falls back to open backpacks
+local function shootRune(runeId, targetThing)
+  if not runeId or runeId <= 0 or not targetThing then return false end
+  local ok = false
+  pcall(function()
+    ok = g_game.useInventoryItemWith(runeId, targetThing, 0)
+  end)
+  if not ok then
+    local it = findItem(runeId)
+    if it then
+      pcall(function()
+        ok = g_game.useWith(it, targetThing, 0)
+      end)
+    end
+  end
+  return ok
+end
 
 -- Check whether (mx, my) is within standard 37-tile Tibia area rune blast centered at (cx, cy)
 local function isBlastHit(cx, cy, mx, my)
@@ -521,26 +561,65 @@ local function getBestAreaTarget(aliveMonsters, currentTarget)
   return bestPos, bestCreature, bestScore
 end
 
--- Core Rune/Spell Loop (runs every 20ms for fast, exact 201ms responsiveness)
+-- Core Rune/Spell Loop
 local lastRuneCast = 0
 local lastWalkApproach = 0
 
+-- Fast auto-target macro (50ms): immediately attacks first target seen on screen
+macro(50, function()
+  if not config.enabled then return end
+  if isInPz() then return end
+
+  local pPos = pos()
+  local pz = pPos.z
+
+  local currentTarget = g_game.getAttackingCreature()
+  if currentTarget then
+    local tPos = currentTarget:getPosition()
+    if not tPos or tPos.z ~= pz or currentTarget:getHealthPercent() <= 0 then
+      currentTarget = nil
+    end
+  end
+
+  -- If not attacking a valid target, attack the first/closest targetable creature on screen!
+  if not currentTarget then
+    local closestDist = 999
+    local closestCreature = nil
+    for _, spec in ipairs(getSpectators()) do
+      if isTargetableCreature(spec) then
+        local sPos = spec:getPosition()
+        local dist = getDistanceBetween(pPos, sPos)
+        if dist < closestDist and dist <= (config.maxRange or 8) then
+          closestDist = dist
+          closestCreature = spec
+        end
+      end
+    end
+
+    if closestCreature then
+      g_game.attack(closestCreature)
+    end
+  end
+end)
+
+-- Main rune and spell casting loop
 macro(20, function()
   if not config.enabled then return end
   if isInPz() then return end
 
   local currentNow = now
-  local delayMs = config.delay or 201
+  local delayMs = tonumber(config.delay) or 201
   if lastRuneCast + delayMs > currentNow then return end
 
   local playerPos = pos()
   local pz = playerPos.z
 
-  -- 1. Gather all alive monsters on current floor within range
+  -- 1. Gather all alive targetable creatures on current floor within range
   local aliveMonsters = {}
   for _, spec in ipairs(getSpectators()) do
-    if spec:isMonster() and spec:getPosition().z == pz and spec:getHealthPercent() > 0 then
-      if getDistanceBetween(playerPos, spec:getPosition()) <= (config.maxRange or 7) then
+    if isTargetableCreature(spec) then
+      local dist = getDistanceBetween(playerPos, spec:getPosition())
+      if dist <= (config.maxRange or 7) then
         table.insert(aliveMonsters, spec)
       end
     end
@@ -551,13 +630,14 @@ macro(20, function()
   -- 2. Find current target
   local currentTarget = g_game.getAttackingCreature()
   if currentTarget then
-    if currentTarget:getPosition().z ~= pz or currentTarget:getHealthPercent() <= 0 then
+    local tPos = currentTarget:getPosition()
+    if not tPos or tPos.z ~= pz or currentTarget:getHealthPercent() <= 0 then
       currentTarget = nil
     end
   end
 
-  -- If no target and autoTarget enabled, pick closest monster as target
-  if not currentTarget and config.autoTarget then
+  -- If no target, pick closest monster as target and attack immediately
+  if not currentTarget then
     local closestDist = 999
     local closestMonster = nil
     for _, m in ipairs(aliveMonsters) do
@@ -569,22 +649,17 @@ macro(20, function()
     end
     if closestMonster then
       currentTarget = closestMonster
-      if not g_game.isAttacking() then
-        g_game.attack(closestMonster)
-      end
+      g_game.attack(closestMonster)
     end
   end
 
   -- 3. Determine if we should shoot Area or Single target
   local wantArea = false
   if config.mode == 3 then
-    -- Always area
     wantArea = true
   elseif config.mode == 1 then
-    -- Dinamico: use area if monsters count >= minMonsters
     wantArea = #aliveMonsters >= (config.minMonsters or 2)
   else
-    -- Solo 1 monster (Single)
     wantArea = false
   end
 
@@ -609,44 +684,39 @@ macro(20, function()
         end
       end
       if targetThing then
-        useWith(config.areaRuneId, targetThing)
+        shootRune(config.areaRuneId, targetThing)
         lastRuneCast = currentNow
         return
       end
     end
-
-    -- If area was blocked by PVP Safe, fallback to Single Target
+    -- Fallback to Single Target if area had no valid spot
   end
 
   -- SINGLE TARGET: Spell (e.g. exori frigo) or Rune (e.g. SD)
   local targetToShoot = currentTarget or aliveMonsters[1]
   if not targetToShoot then return end
 
+  if g_game.getAttackingCreature() ~= targetToShoot then
+    g_game.attack(targetToShoot)
+  end
+
+  local tPos = targetToShoot:getPosition()
+  local dist = getDistanceBetween(playerPos, tPos)
+
   if config.singleType == "spell" and config.singleSpell and config.singleSpell:len() > 0 then
-    if not g_game.isAttacking() or g_game.getAttackingCreature() ~= targetToShoot then
-      g_game.attack(targetToShoot)
-    end
-
-    local tPos = targetToShoot:getPosition()
-    local dist = getDistanceBetween(playerPos, tPos)
-
-    -- If distance > 3 SQM, approach to 3 SQM
-    if dist > (config.singleApproachDist or 3) then
-      if config.singleApproach then
-        if not player:isWalking() or (lastWalkApproach + 350 < currentNow) then
-          autoWalk(tPos, 20, {ignoreNonPathable = true, marginMin = 1, marginMax = (config.singleApproachDist or 3), ignoreCreatures = true})
-          lastWalkApproach = currentNow
-        end
+    if config.singleApproach and dist > (config.singleApproachDist or 3) then
+      if not player:isWalking() or (lastWalkApproach + 300 < currentNow) then
+        autoWalk(tPos, 20, {ignoreNonPathable = true, marginMin = 1, marginMax = (config.singleApproachDist or 3), ignoreCreatures = true})
+        lastWalkApproach = currentNow
       end
       return
     end
 
-    -- Within 3 SQM: cast strike spell!
     say(config.singleSpell)
     lastRuneCast = currentNow
     return
   elseif config.singleRuneId and config.singleRuneId > 0 then
-    useWith(config.singleRuneId, targetToShoot)
+    shootRune(config.singleRuneId, targetToShoot)
     lastRuneCast = currentNow
     return
   end

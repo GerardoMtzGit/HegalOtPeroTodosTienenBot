@@ -58,7 +58,10 @@ local luaFiles = {
 }
 
 for i, file in ipairs(luaFiles) do
-  loadScript(file)
+  local ok, err = pcall(loadScript, file)
+  if not ok then
+    warn("[Loader Error] Failed loading " .. tostring(file) .. ": " .. tostring(err))
+  end
 end
 
 setDefaultTab("Main")

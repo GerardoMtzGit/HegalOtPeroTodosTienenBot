@@ -58,7 +58,7 @@ targetbotMacro = macro(100, function()
     local hppc = creature:getHealthPercent()
     if hppc and hppc > 0 then
       local path = findPath(player:getPosition(), creature:getPosition(), 7, {ignoreLastCreature=true, ignoreNonPathable=true, ignoreCost=true, ignoreCreatures=true})
-      if creature:isMonster() and (oldTibia or creature:getType() < 3) and path then
+      if (creature:isMonster() or (not creature:isPlayer() and not creature:isNpc())) and (oldTibia or creature:getType() < 3) and path then
         local params = TargetBot.Creature.calculateParams(creature, path) -- return {craeture, config, danger, priority}
         dangerLevel = dangerLevel + params.danger
         if params.priority > 0 then
@@ -72,6 +72,43 @@ targetbotMacro = macro(100, function()
           end
         end
       end
+    end
+  end
+
+  -- Fallback: if no creature matched configured rules, attack the first visible monster on screen!
+  if not highestPriorityParams and not isInPz() then
+    local pPos = player:getPosition()
+    local closestDist = 999
+    local fallbackCreature = nil
+    for _, creature in ipairs(specs) do
+      if not creature:isLocalPlayer() and not creature:isNpc() then
+        local isMob = creature:isMonster() or not creature:isPlayer()
+        local hppc = creature:getHealthPercent()
+        if isMob and hppc and hppc > 0 and creature:getPosition().z == pPos.z then
+          local dist = getDistanceBetween(pPos, creature:getPosition())
+          if dist < closestDist and dist <= 10 then
+            closestDist = dist
+            fallbackCreature = creature
+          end
+        end
+      end
+    end
+    if fallbackCreature then
+      local fallbackConfig = {
+        name = fallbackCreature:getName(),
+        priority = 1,
+        danger = 1,
+        maxDistance = 10,
+        chase = true,
+        keepDistance = false
+      }
+      highestPriorityParams = {
+        config = fallbackConfig,
+        creature = fallbackCreature,
+        danger = 1,
+        priority = 1
+      }
+      targets = targets + 1
     end
   end
 

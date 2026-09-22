@@ -168,18 +168,19 @@ TargetBot.Creature.walk = function(creature, config, targets)
   end
 
   local currentDistance = findPath(pos, cpos, 10, {ignoreCreatures=true, ignoreNonPathable=true, ignoreCost=true})
-  if (not config.chase or #currentDistance == 1) and not config.avoidAttacks and not config.keepDistance and config.rePosition and (creature:getHealthPercent() >= storage.extras.killUnder) then
+  local distLen = currentDistance and #currentDistance or getDistanceBetween(pos, cpos)
+  if (not config.chase or distLen == 1) and not config.avoidAttacks and not config.keepDistance and config.rePosition and (creature:getHealthPercent() >= storage.extras.killUnder) then
     return rePosition(config.rePositionAmount or 6)
   end
   if ((storage.extras.killUnder > 1 and (creature:getHealthPercent() < storage.extras.killUnder)) or config.chase) and not config.keepDistance then
-    if #currentDistance > 1 then
+    if distLen > 1 then
       return TargetBot.walkTo(cpos, 10, {ignoreNonPathable=true, precision=1})
     end
   elseif config.keepDistance then
     if not anchorPosition or distanceFromPlayer(anchorPosition) > config.anchorRange then
       anchorPosition = pos
     end
-    if #currentDistance ~= config.keepDistanceRange and #currentDistance ~= config.keepDistanceRange + 1 then
+    if distLen ~= config.keepDistanceRange and distLen ~= config.keepDistanceRange + 1 then
       if config.anchor and anchorPosition and getDistanceBetween(pos, anchorPosition) <= config.anchorRange*2 then
         return TargetBot.walkTo(cpos, 10, {ignoreNonPathable=true, marginMin=config.keepDistanceRange, marginMax=config.keepDistanceRange + 1, maxDistanceFrom={anchorPosition, config.anchorRange}})
       else

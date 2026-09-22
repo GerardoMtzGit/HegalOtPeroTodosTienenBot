@@ -196,15 +196,21 @@ local function triggerManaHeal(forceState)
 end
 
 local function createOrUpdateIcon()
-  if manaIconWidget then return end
   local gameMapPanel = modules.game_interface and modules.game_interface.getMapPanel()
   if not gameMapPanel then return end
 
-  manaIconWidget = g_ui.createWidget("ManaIconWidget", gameMapPanel)
-  manaIconWidget.botWidget = true
+  if not manaIconWidget then
+    local oldWidget = gameMapPanel:getChildById("manaPotionFloatingIcon")
+    if oldWidget then
+      oldWidget:destroy()
+    end
+    manaIconWidget = g_ui.createWidget("ManaIconWidget", gameMapPanel)
+    manaIconWidget:setId("manaPotionFloatingIcon")
+    manaIconWidget.botWidget = true
 
-  manaIconWidget:setMarginLeft(config.pos and config.pos.x or 20)
-  manaIconWidget:setMarginTop(config.pos and config.pos.y or 30)
+    manaIconWidget:setMarginLeft(config.pos and config.pos.x or 20)
+    manaIconWidget:setMarginTop(config.pos and config.pos.y or 30)
+  end
 
   manaIconWidget.onMousePress = function(self, mousePos, mouseButton)
     if mouseButton == MouseLeftButton or mouseButton == 1 or not mouseButton then
@@ -599,12 +605,5 @@ onManaChange(function(player, mana, maxMana, oldMana, oldMaxMana)
     updateVisuals()
   elseif manaIconWidget then
     updateVisuals()
-  end
-end)
-
-onStop(function()
-  if manaIconWidget then
-    manaIconWidget:destroy()
-    manaIconWidget = nil
   end
 end)
