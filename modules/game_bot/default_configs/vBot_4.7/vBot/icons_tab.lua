@@ -7,7 +7,7 @@ if not storage[panelName] then
     enabled = true,
     targetPercent = 90,
     itemId = 438,
-    delay = 300,
+    delay = 250,
     autoMaintain = false,
     lockPosition = true,
     pos = { x = 20, y = 30 }
@@ -83,22 +83,26 @@ end
 local function drinkOnce()
   local id = tonumber(config.itemId) or 438
   local itemObj, actualId = resolveItem(id)
+  local targetId = actualId or id
   local ok = false
 
-  if itemObj then
-    ok = pcall(function() useWith(itemObj, player) end)
+  -- Primary: useInventoryItemWith directly with ID
+  if targetId and targetId > 0 then
+    ok = pcall(function() g_game.useInventoryItemWith(targetId, player) end)
   end
 
-  if not ok and actualId and actualId > 0 then
-    ok = pcall(function() useWith(actualId, player) end)
+  -- Secondary: useWith object if found
+  if not ok and itemObj then
+    ok = pcall(function() g_game.useWith(itemObj, player) end)
   end
 
+  -- Tertiary: check candidates
   if not ok then
     local candidates = PotionAliases[id]
     if candidates then
       for _, altId in ipairs(candidates) do
-        if altId ~= actualId then
-          ok = pcall(function() useWith(altId, player) end)
+        if altId ~= targetId then
+          ok = pcall(function() g_game.useInventoryItemWith(altId, player) end)
           if ok then break end
         end
       end
@@ -111,7 +115,7 @@ end
 local isDrinking = false
 local manaIconWidget = nil
 local statusLabel = nil
-local lastTriggerTime = 0
+local emptyAttempts = 0
 
 local function updateVisuals()
   local target = tonumber(config.targetPercent) or 90
@@ -121,6 +125,7 @@ local function updateVisuals()
     manaIconWidget:setVisible(config.enabled)
     local _, previewId = resolveItem(tonumber(config.itemId) or 438)
     manaIconWidget.item:setItemId(previewId or 23373)
+    manaIconWidget:setOn(isDrinking)
 
     if isDrinking then
       manaIconWidget:setBorderColor("#00ffff")
@@ -138,13 +143,14 @@ local function updateVisuals()
 
     manaIconWidget:setTooltip("Icono de Mana (ID " .. (config.itemId or 438) .. ")\n" ..
                               "Clic: Curar mana al " .. target .. "%\n" ..
-                              "Estado: " .. (isDrinking and "CURANDO AL " .. target .. "%..." or "Listo") .. "\n" ..
+                              "Estado: " .. (isDrinking and ("CURANDO AL " .. target .. "% (" .. curMp .. "%)") or "Listo") .. "\n" ..
+                              "Clic Derecho: Cancelar curacion\n" ..
                               "Ctrl + Arrastrar para mover")
   end
 
   if statusLabel then
     if isDrinking then
-      statusLabel:setText("Curando Mana: " .. curMp .. "% -> " .. target .. "%...")
+      statusLabel:setText("Curando Mana: " .. curMp .. "% -> " .. target .. "% (En curso...)")
       statusLabel:setColor("#00ffff")
     else
       statusLabel:setText("Mana Actual: " .. curMp .. "% | Estado: Listo")
@@ -153,21 +159,23 @@ local function updateVisuals()
   end
 end
 
-local function triggerManaHeal()
-  local nowMs = g_clock and g_clock.millis() or (os.time() * 1000)
-  if nowMs - lastTriggerTime < 200 then return end
-  lastTriggerTime = nowMs
-
+local function triggerManaHeal(forceState)
   local target = tonumber(config.targetPercent) or 90
   local curMp = manapercent()
 
-  if isDrinking then
+  -- If explicitly cancelled (e.g. right click)
+  if forceState == false then
     isDrinking = false
+    emptyAttempts = 0
     updateVisuals()
     return
   end
 
+  -- If mana is already >= target, show FULL and don't drink
   if curMp >= target then
+    isDrinking = false
+    emptyAttempts = 0
+    updateVisuals()
     if manaIconWidget and manaIconWidget.text then
       manaIconWidget.text:setText("FULL")
       schedule(800, function()
@@ -179,10 +187,16 @@ local function triggerManaHeal()
     return
   end
 
+  -- ACTIVATE: Must not stop until mana reaches target!
   isDrinking = true
+  emptyAttempts = 0
   updateVisuals()
+
   -- Instant first drink
-  drinkOnce()
+  local used = drinkOnce()
+  if not used then
+    emptyAttempts = emptyAttempts + 1
+  end
 end
 
 local function createOrUpdateIcon()
@@ -196,19 +210,34 @@ local function createOrUpdateIcon()
   manaIconWidget:setMarginLeft(config.pos and config.pos.x or 20)
   manaIconWidget:setMarginTop(config.pos and config.pos.y or 30)
 
-  -- Native Button click
-  manaIconWidget.onClick = function(self)
-    triggerManaHeal()
+  -- Instant response on press
+  manaIconWidget.onMousePress = function(self, mousePos, mouseButton)
+    if mouseButton == MouseLeftButton or mouseButton == 1 or not mouseButton then
+      if not g_keyboard.isCtrlPressed() or not config.lockPosition then
+        triggerManaHeal(true)
+      end
+    end
   end
 
-  -- Mouse release fallback for instant response
+  -- Instant response on release
   manaIconWidget.onMouseRelease = function(self, mousePos, mouseButton)
     if self.isBeingDragged then
       self.isBeingDragged = false
       return true
     end
-    triggerManaHeal()
-    return true
+    if mouseButton == MouseRightButton or mouseButton == 2 then
+      triggerManaHeal(false)
+      return true
+    end
+    if mouseButton == MouseLeftButton or mouseButton == 1 or not mouseButton then
+      triggerManaHeal(true)
+      return true
+    end
+  end
+
+  -- Fallback onClick
+  manaIconWidget.onClick = function(self)
+    triggerManaHeal(true)
   end
 
   manaIconWidget.onDragEnter = function(self, mousePos)
@@ -425,7 +454,7 @@ Panel
     anchors.right: parent.right
     margin-top: 4
     height: 19
-    text: Curar Mana Ahora (Probar)
+    text: Curar Mana Ahora (Hasta el 90%)
     font: cipsoftFont
 ]])
 
@@ -459,7 +488,7 @@ tabUi.rowTarget.targetPercent.onTextChange = function(widget, text)
   end
 end
 
-tabUi.rowDelay.delay:setText(tostring(config.delay or 300))
+tabUi.rowDelay.delay:setText(tostring(config.delay or 250))
 tabUi.rowDelay.delay.onTextChange = function(widget, text)
   local num = tonumber(text)
   if num and num >= 50 then
@@ -517,14 +546,14 @@ tabUi.resetPosBtn.onClick = function()
 end
 
 tabUi.testBtn.onClick = function()
-  triggerManaHeal()
+  triggerManaHeal(true)
 end
 
 UI.Separator()
-UI.Label("Parametros y configuracion de iconos HUD.")
+UI.Label("Clic en el icono: Curar hasta el 90% ininterrumpidamente.\nClic derecho: Cancelar.")
 UI.Separator()
 
--- Rapid dedicated healing loop
+-- Continuous healing loop - DOES NOT STOP until target % is reached!
 macro(50, function()
   if not isDrinking and not config.autoMaintain then return end
 
@@ -532,26 +561,48 @@ macro(50, function()
   local curMp = manapercent()
 
   if isDrinking then
+    -- ONLY stop when target percentage is reached or exceeded!
     if curMp >= target then
       isDrinking = false
+      emptyAttempts = 0
       updateVisuals()
       return
     end
 
-    drinkOnce()
+    local used = drinkOnce()
+    if not used then
+      emptyAttempts = emptyAttempts + 1
+      if emptyAttempts >= 8 then
+        -- Out of potions
+        isDrinking = false
+        emptyAttempts = 0
+        updateVisuals()
+        return
+      end
+    else
+      emptyAttempts = 0
+    end
+
     updateVisuals()
-    delay(tonumber(config.delay) or 300)
+    delay(tonumber(config.delay) or 250)
     return
   end
 
   if config.autoMaintain and curMp < target then
     drinkOnce()
-    delay(tonumber(config.delay) or 300)
+    delay(tonumber(config.delay) or 250)
   end
 end)
 
 onManaChange(function(player, mana, maxMana, oldMana, oldMaxMana)
-  if isDrinking or manaIconWidget then
+  if isDrinking then
+    local target = tonumber(config.targetPercent) or 90
+    if manapercent() >= target then
+      isDrinking = false
+      emptyAttempts = 0
+    end
+    updateVisuals()
+  elseif manaIconWidget then
     updateVisuals()
   end
 end)

@@ -11,12 +11,16 @@ ManaIconWidget < UIButton
   margin-left: 20
   margin-top: 30
 
+  $on:
+    border-color: #00ffff
+    background-color: #1e3a8aee
+
   $hover:
     border-color: #60a5fa
     background-color: #111e38ee
 
   $pressed:
-    border-color: #93c5fd
+    border-color: #00ffff
     background-color: #1d4ed8ee
 
   UIItem
