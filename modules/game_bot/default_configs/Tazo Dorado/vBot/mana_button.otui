@@ -1,0 +1,49 @@
+ManaIconWidget < UIWidget
+  size: 46 46
+  focusable: false
+  phantom: false
+  draggable: true
+  background-color: #0b1526ee
+  border-width: 1
+  border-color: #3b82f6
+  anchors.left: parent.left
+  anchors.top: parent.top
+  margin-left: 20
+  margin-top: 30
+
+  $hover:
+    border-color: #60a5fa
+    background-color: #111e38ee
+
+  $pressed:
+    border-color: #93c5fd
+    background-color: #1d4ed8ee
+
+  UIItem
+    id: item
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 3
+    virtual: true
+    phantom: true
+    size: 26 26
+
+  UIWidget
+    id: status
+    anchors.top: parent.top
+    anchors.right: parent.right
+    size: 7 7
+    margin-top: 3
+    margin-right: 3
+    background-color: #3b82f6
+    phantom: true
+
+  Label
+    id: text
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-bottom: 2
+    font: verdana-9px
+    color: #93c5fd
+    phantom: true
+    text: 90%

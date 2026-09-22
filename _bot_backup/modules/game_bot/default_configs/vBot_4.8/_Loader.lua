@@ -32,6 +32,7 @@ local luaFiles = {
   "pushmax",
   "combo",
   "HealBot",
+  "mana_button",
   "new_healer",
   "AttackBot", -- last of major modules
   "ingame_editor",
@@ -42,6 +43,7 @@ local luaFiles = {
   "tools",
   "antiRs",
   "depot_withdraw",
+  "cast_food",
   "eat_food",
   "equip",
   "exeta",
