@@ -32,7 +32,7 @@ local luaFiles = {
   "pushmax",
   "combo",
   "HealBot",
-  "mana_button",
+  "icons_tab",
   "new_healer",
   "AttackBot", -- last of major modules
   "ingame_editor",

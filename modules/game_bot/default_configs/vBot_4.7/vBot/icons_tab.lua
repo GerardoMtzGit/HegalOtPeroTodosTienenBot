@@ -1,13 +1,13 @@
--- Mana Quick-Heal Button and Tab Configuration
-setDefaultTab("Mana")
+-- Tab Iconos - Configuracion central de iconos HUD y Quick-Heal
+setDefaultTab("Iconos")
 
-local panelName = "manaButton"
+local panelName = "iconsTab"
 if not storage[panelName] then
   storage[panelName] = {
     enabled = true,
     targetPercent = 90,
     itemId = 438,
-    delay = 350,
+    delay = 300,
     autoMaintain = false,
     lockPosition = true,
     pos = { x = 20, y = 30 }
@@ -45,9 +45,11 @@ local PotionAliases = {
 local function resolveItem(itemId)
   if not itemId or itemId <= 0 then return nil, itemId end
 
+  -- 1. Look in open containers
   local it = findItem(itemId)
   if it then return it, itemId end
 
+  -- 2. Look in inventory slots (1-10)
   if getInventoryItem then
     for slot = 1, 10 do
       local invItem = getInventoryItem(slot)
@@ -57,6 +59,7 @@ local function resolveItem(itemId)
     end
   end
 
+  -- 3. Check aliases
   local candidates = PotionAliases[itemId]
   if candidates then
     for _, altId in ipairs(candidates) do
@@ -77,18 +80,38 @@ local function resolveItem(itemId)
   return nil, fallbackId
 end
 
-local function useHealItem(itemObj, itemId)
+local function drinkOnce()
+  local id = tonumber(config.itemId) or 438
+  local itemObj, actualId = resolveItem(id)
   local ok = false
+
   if itemObj then
-    ok = pcall(function() g_game.useWith(itemObj, player) end)
+    ok = pcall(function() useWith(itemObj, player) end)
   end
-  if not ok and itemId and itemId > 0 then
-    pcall(function() g_game.useInventoryItemWith(itemId, player) end)
+
+  if not ok and actualId and actualId > 0 then
+    ok = pcall(function() useWith(actualId, player) end)
   end
+
+  if not ok then
+    local candidates = PotionAliases[id]
+    if candidates then
+      for _, altId in ipairs(candidates) do
+        if altId ~= actualId then
+          ok = pcall(function() useWith(altId, player) end)
+          if ok then break end
+        end
+      end
+    end
+  end
+
+  return ok
 end
 
 local isDrinking = false
 local manaIconWidget = nil
+local statusLabel = nil
+local lastTriggerTime = 0
 
 local function updateVisuals()
   local target = tonumber(config.targetPercent) or 90
@@ -113,15 +136,15 @@ local function updateVisuals()
       manaIconWidget.text:setText(target .. "%")
     end
 
-    manaIconWidget:setTooltip("Mana Quick-Heal (ID " .. (config.itemId or 438) .. ")\n" ..
-                              "Clic: Subir mana al " .. target .. "%\n" ..
-                              "Estado: " .. (isDrinking and "Curando..." or "Listo") .. "\n" ..
+    manaIconWidget:setTooltip("Icono de Mana (ID " .. (config.itemId or 438) .. ")\n" ..
+                              "Clic: Curar mana al " .. target .. "%\n" ..
+                              "Estado: " .. (isDrinking and "CURANDO AL " .. target .. "%..." or "Listo") .. "\n" ..
                               "Ctrl + Arrastrar para mover")
   end
 
   if statusLabel then
     if isDrinking then
-      statusLabel:setText("Mana: " .. curMp .. "% -> Curando al " .. target .. "%...")
+      statusLabel:setText("Curando Mana: " .. curMp .. "% -> " .. target .. "%...")
       statusLabel:setColor("#00ffff")
     else
       statusLabel:setText("Mana Actual: " .. curMp .. "% | Estado: Listo")
@@ -131,6 +154,10 @@ local function updateVisuals()
 end
 
 local function triggerManaHeal()
+  local nowMs = g_clock and g_clock.millis() or (os.time() * 1000)
+  if nowMs - lastTriggerTime < 200 then return end
+  lastTriggerTime = nowMs
+
   local target = tonumber(config.targetPercent) or 90
   local curMp = manapercent()
 
@@ -143,7 +170,7 @@ local function triggerManaHeal()
   if curMp >= target then
     if manaIconWidget and manaIconWidget.text then
       manaIconWidget.text:setText("FULL")
-      schedule(1000, function()
+      schedule(800, function()
         if not isDrinking and manaIconWidget and manaIconWidget.text then
           manaIconWidget.text:setText(target .. "%")
         end
@@ -154,6 +181,8 @@ local function triggerManaHeal()
 
   isDrinking = true
   updateVisuals()
+  -- Instant first drink
+  drinkOnce()
 end
 
 local function createOrUpdateIcon()
@@ -167,8 +196,19 @@ local function createOrUpdateIcon()
   manaIconWidget:setMarginLeft(config.pos and config.pos.x or 20)
   manaIconWidget:setMarginTop(config.pos and config.pos.y or 30)
 
+  -- Native Button click
   manaIconWidget.onClick = function(self)
     triggerManaHeal()
+  end
+
+  -- Mouse release fallback for instant response
+  manaIconWidget.onMouseRelease = function(self, mousePos, mouseButton)
+    if self.isBeingDragged then
+      self.isBeingDragged = false
+      return true
+    end
+    triggerManaHeal()
+    return true
   end
 
   manaIconWidget.onDragEnter = function(self, mousePos)
@@ -176,6 +216,12 @@ local function createOrUpdateIcon()
       return false
     end
     self.movingReference = { x = mousePos.x - self:getX(), y = mousePos.y - self:getY() }
+    self.isBeingDragged = true
+    return true
+  end
+
+  manaIconWidget.onDragLeave = function(self)
+    self.isBeingDragged = false
     return true
   end
 
@@ -203,10 +249,10 @@ onGameStart(function()
   createOrUpdateIcon()
 end)
 
--- Tab Configuration UI
+-- UI inside the "Iconos" tab
 local tabUi = setupUI([[
 Panel
-  height: 280
+  height: 290
 
   BotSwitch
     id: enabledSwitch
@@ -379,13 +425,12 @@ Panel
     anchors.right: parent.right
     margin-top: 4
     height: 19
-    text: Probar Curacion Ahora
+    text: Curar Mana Ahora (Probar)
     font: cipsoftFont
 ]])
 
 statusLabel = tabUi.statusLabel
 
--- Bind Tab UI elements
 tabUi.enabledSwitch:setOn(config.enabled)
 tabUi.enabledSwitch.onClick = function(widget)
   config.enabled = not config.enabled
@@ -414,7 +459,7 @@ tabUi.rowTarget.targetPercent.onTextChange = function(widget, text)
   end
 end
 
-tabUi.rowDelay.delay:setText(tostring(config.delay or 350))
+tabUi.rowDelay.delay:setText(tostring(config.delay or 300))
 tabUi.rowDelay.delay.onTextChange = function(widget, text)
   local num = tonumber(text)
   if num and num >= 50 then
@@ -476,13 +521,12 @@ tabUi.testBtn.onClick = function()
 end
 
 UI.Separator()
-UI.Label("Tip: Clic en el icono en pantalla para subir el mana. Puedes moverlo manteniendo presionada la tecla Ctrl.")
+UI.Label("Parametros y configuracion de iconos HUD.")
 UI.Separator()
 
--- Continuous Healing Macro
-macro(100, function()
+-- Rapid dedicated healing loop
+macro(50, function()
   if not isDrinking and not config.autoMaintain then return end
-  if vBot and vBot.isUsingPotion then return end
 
   local target = tonumber(config.targetPercent) or 90
   local curMp = manapercent()
@@ -494,17 +538,15 @@ macro(100, function()
       return
     end
 
-    local itemObj, actualId = resolveItem(tonumber(config.itemId) or 438)
-    useHealItem(itemObj, actualId)
+    drinkOnce()
     updateVisuals()
-    delay(tonumber(config.delay) or 350)
+    delay(tonumber(config.delay) or 300)
     return
   end
 
   if config.autoMaintain and curMp < target then
-    local itemObj, actualId = resolveItem(tonumber(config.itemId) or 438)
-    useHealItem(itemObj, actualId)
-    delay(tonumber(config.delay) or 350)
+    drinkOnce()
+    delay(tonumber(config.delay) or 300)
   end
 end)
 

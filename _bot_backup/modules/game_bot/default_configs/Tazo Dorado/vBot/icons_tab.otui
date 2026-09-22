@@ -1,4 +1,4 @@
-ManaIconWidget < UIWidget
+ManaIconWidget < UIButton
   size: 46 46
   focusable: false
   phantom: false
