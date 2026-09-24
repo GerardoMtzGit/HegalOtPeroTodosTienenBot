@@ -385,6 +385,18 @@ local function countOpenContainers(id)
     return count
 end
 
+local function isBackOpen()
+    local back = getBack()
+    if not back then return false end
+    for _, c in pairs(getContainers()) do
+        local ci = c:getContainerItem()
+        if ci and ci:getId() == back:getId() then
+            return true
+        end
+    end
+    return false
+end
+
 local lastActionTime = 0
 local function checkAndOpenNextContainer()
     if not g_game.isOnline() then return false end
@@ -395,9 +407,9 @@ local function checkAndOpenNextContainer()
         return false
     end
 
-    -- 1. Main backpack on player
+    -- 1. Main backpack on player (SlotBack)
     local back = getBack()
-    if back and #getContainers() == 0 then
+    if back and not isBackOpen() then
         lastActionTime = now
         g_game.open(back)
         return true
@@ -417,14 +429,14 @@ local function checkAndOpenNextContainer()
     if config.list and #config.list > 0 then
         for _, entry in ipairs(config.list) do
             if entry.enabled and entry.item and entry.item > 100 then
-                local openCount = countOpenContainers(entry.item)
-                if openCount == 0 then
+                local isOpen = isContainerOpen(entry.item)
+                if not isOpen then
                     -- Check body slots first (right, left, ammo)
                     local slots = {getRight(), getLeft(), getAmmo()}
                     for _, slotItem in ipairs(slots) do
                         if slotItem and slotItem:getId() == entry.item then
                             lastActionTime = now
-                            g_game.open(slotItem, nil)
+                            g_game.open(slotItem)
                             return true
                         end
                     end
@@ -432,24 +444,10 @@ local function checkAndOpenNextContainer()
                     -- Search in currently open containers
                     for _, c in pairs(getContainers()) do
                         for _, it in ipairs(c:getItems()) do
-                            if it:isContainer() and it:getId() == entry.item then
+                            if it:getId() == entry.item then
                                 lastActionTime = now
-                                g_game.open(it, nil)
+                                g_game.open(it)
                                 return true
-                            end
-                        end
-                    end
-                elseif entry.openNext then
-                    -- If openNext is enabled, find nested containers of same ID inside open containers
-                    for _, c in pairs(getContainers()) do
-                        local ci = c:getContainerItem()
-                        if ci and ci:getId() == entry.item then
-                            for _, it in ipairs(c:getItems()) do
-                                if it:isContainer() and it:getId() == entry.item then
-                                    lastActionTime = now
-                                    g_game.open(it, nil)
-                                    return true
-                                end
                             end
                         end
                     end
@@ -465,7 +463,7 @@ local function checkAndOpenNextContainer()
             for _, it in ipairs(purseCont:getItems()) do
                 if it:getId() == 23721 then
                     lastActionTime = now
-                    g_game.open(it, nil)
+                    g_game.open(it)
                     return true
                 end
             end
@@ -688,7 +686,7 @@ onContainerOpen(function(container, previousContainer)
                     for i, item in ipairs(container:getItems()) do
                         if item:getId() == entry.item then
                             schedule(250, function()
-                                g_game.open(item, nil)
+                                g_game.open(item)
                             end)
                             break
                         end

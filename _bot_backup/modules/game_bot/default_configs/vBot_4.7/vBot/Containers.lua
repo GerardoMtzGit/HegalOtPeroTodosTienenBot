@@ -1,16 +1,21 @@
 setDefaultTab("Tools")
 local panelName = "renameContainers"
+
 if type(storage[panelName]) ~= "table" then
     storage[panelName] = {
-        enabled = false;
+        enabled = false,
         height = 170,
-        purse = true;
+        purse = false,
+        sort = false,
+        forceOpen = false,
+        lootBag = false,
         list = {
             {
                 value = "Main Backpack",
                 enabled = true,
                 item = 9601,
                 min = false,
+                openNext = false,
                 items = { 3081, 3048 }
             },
             {
@@ -18,6 +23,7 @@ if type(storage[panelName]) ~= "table" then
                 enabled = true,
                 item = 2866,
                 min = true,
+                openNext = false,
                 items = { 3161, 3180 }
             },
             {
@@ -25,6 +31,7 @@ if type(storage[panelName]) ~= "table" then
                 enabled = true,
                 item = 2871,
                 min = true,
+                openNext = false,
                 items = { 3031, 3035, 3043 }
             },
             {
@@ -32,13 +39,20 @@ if type(storage[panelName]) ~= "table" then
                 enabled = true,
                 item = 23396,
                 min = true,
+                openNext = false,
                 items = {}
-            },
+            }
         }
     }
 end
 
 local config = storage[panelName]
+if config.enabled == nil then config.enabled = false end
+if config.purse == nil then config.purse = false end
+if config.sort == nil then config.sort = false end
+if config.forceOpen == nil then config.forceOpen = false end
+if config.lootBag == nil then config.lootBag = false end
+if type(config.list) ~= "table" then config.list = {} end
 
 UI.Separator()
 local renameContui = setupUI([[
@@ -59,7 +73,7 @@ Panel
     anchors.left: parent.left
     text-align: center
     width: 130
-    !text: tr('Open Minimised')
+    !text: tr('Auto Open BPs')
     font: verdana-11px-rounded
 
   Button
@@ -145,7 +159,7 @@ BackpackName < Label
     tooltip: Open container inside with the same ID.
 
 ContListsWindow < MainWindow
-  !text: tr('Container Names')
+  !text: tr('Container Names & Auto Open')
   size: 465 170
   @onEscape: self:hide()
 
@@ -309,72 +323,183 @@ ContListsWindow < MainWindow
 ]])
 
 function findItemsInArray(t, tfind)
+    if type(t) ~= "table" then return tfind and nil or {} end
     local tArray = {}
-    for x,v in pairs(t) do
+    for x, v in pairs(t) do
         if type(v) == "table" then
-            local aItem = t[x].item
-            local aEnabled = t[x].enabled
-                if aItem then
-                    if tfind and aItem == tfind then
-                        return x
-                    elseif not tfind then
-                        if aEnabled then
-                            table.insert(tArray, aItem)
+            local aItem = v.item
+            local aEnabled = v.enabled
+            if aItem then
+                if tfind and aItem == tfind then
+                    return x
+                elseif not tfind then
+                    if aEnabled then
+                        table.insert(tArray, aItem)
+                    end
+                end
+            end
+        end
+    end
+    if not tfind then return tArray end
+    return nil
+end
+
+local function properTable(t)
+    local r = {}
+    if type(t) ~= "table" then return r end
+    for _, entry in pairs(t) do
+        if type(entry) == "number" then
+            table.insert(r, entry)
+        elseif type(entry) == "table" and entry.id then
+            table.insert(r, entry.id)
+        end
+    end
+    return r
+end
+
+local function moveItem(item, destination)
+    if not item or not destination then return end
+    return g_game.move(item, destination:getSlotPosition(destination:getItemsCount()), item:getCount())
+end
+
+local function isContainerOpen(id)
+    if not id or id <= 0 then return false end
+    for _, c in pairs(getContainers()) do
+        local ci = c:getContainerItem()
+        if ci and ci:getId() == id then
+            return true
+        end
+    end
+    return false
+end
+
+local function countOpenContainers(id)
+    if not id or id <= 0 then return 0 end
+    local count = 0
+    for _, c in pairs(getContainers()) do
+        local ci = c:getContainerItem()
+        if ci and ci:getId() == id then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+local function isBackOpen()
+    local back = getBack()
+    if not back then return false end
+    for _, c in pairs(getContainers()) do
+        local ci = c:getContainerItem()
+        if ci and ci:getId() == back:getId() then
+            return true
+        end
+    end
+    return false
+end
+
+local lastActionTime = 0
+local function checkAndOpenNextContainer()
+    if not g_game.isOnline() then return false end
+    if not config.enabled then return false end
+
+    local now = g_clock.millis()
+    if now < lastActionTime + 300 then
+        return false
+    end
+
+    -- 1. Main backpack on player (SlotBack)
+    local back = getBack()
+    if back and not isBackOpen() then
+        lastActionTime = now
+        g_game.open(back)
+        return true
+    end
+
+    -- 2. Open Purse if enabled
+    if config.purse and not isContainerOpen(23396) then
+        local purse = getPurse()
+        if purse then
+            lastActionTime = now
+            use(purse)
+            return true
+        end
+    end
+
+    -- 3. Configured backpacks in list
+    if config.list and #config.list > 0 then
+        for _, entry in ipairs(config.list) do
+            if entry.enabled and entry.item and entry.item > 100 then
+                local isOpen = isContainerOpen(entry.item)
+                if not isOpen then
+                    -- Check body slots first (right, left, ammo)
+                    local slots = {getRight(), getLeft(), getAmmo()}
+                    for _, slotItem in ipairs(slots) do
+                        if slotItem and slotItem:getId() == entry.item then
+                            lastActionTime = now
+                            g_game.open(slotItem)
+                            return true
+                        end
+                    end
+
+                    -- Search in currently open containers
+                    for _, c in pairs(getContainers()) do
+                        for _, it in ipairs(c:getItems()) do
+                            if it:getId() == entry.item then
+                                lastActionTime = now
+                                g_game.open(it)
+                                return true
+                            end
                         end
                     end
                 end
             end
         end
-    if not tfind then return tArray end
-end
-
-local lstBPs
-
-
-local openContainer = function(id)
-    local t = {getRight(), getLeft(), getAmmo()} -- if more slots needed then add them here
-    for i=1,#t do
-        local slotItem = t[i]
-        if slotItem and slotItem:getId() == id then
-            return g_game.open(slotItem, nil)
-        end
     end
 
-    for i, container in pairs(g_game.getContainers()) do
-        for i, item in ipairs(container:getItems()) do
-            if item:isContainer() and item:getId() == id then
-                return g_game.open(item, nil)
+    -- 4. Gunzodus Loot Bag (if configured)
+    if config.lootBag and not isContainerOpen(23721) then
+        local purseCont = getContainerByItem(23396)
+        if purseCont then
+            for _, it in ipairs(purseCont:getItems()) do
+                if it:getId() == 23721 then
+                    lastActionTime = now
+                    g_game.open(it)
+                    return true
+                end
+            end
+        elseif config.purse then
+            local purse = getPurse()
+            if purse then
+                lastActionTime = now
+                use(purse)
+                return true
             end
         end
     end
+
+    return false
 end
 
 function reopenBackpacks()
-    lstBPs = findItemsInArray(config.list)
-
-    for _, container in pairs(g_game.getContainers()) do g_game.close(container) end
-    bpItem = getBack()
-    if bpItem ~= nil then
-        g_game.open(bpItem)
+    for _, container in pairs(getContainers()) do
+        g_game.close(container)
     end
 
-    schedule(500, function()
-        local delay = 200
-
+    schedule(350, function()
+        local back = getBack()
+        if back then
+            g_game.open(back)
+        end
         if config.purse then
-            local item = getPurse()
-            if item then
-                use(item)
-            end
-        end
-        for i=1,#lstBPs do
-            schedule(delay, function()
-                openContainer(lstBPs[i])
+            schedule(200, function()
+                local purse = getPurse()
+                if purse then use(purse) end
             end)
-            delay = delay + 250
         end
+        schedule(500, function()
+            checkAndOpenNextContainer()
+        end)
     end)
-    
 end
 
 rootWidget = g_ui.getRootWidget()
@@ -384,7 +509,6 @@ if rootWidget then
 
     contListWindow.onGeometryChange = function(widget, old, new)
         if old.height == 0 then return end
-        
         config.height = new.height
     end
 
@@ -402,8 +526,9 @@ if rootWidget then
 
     renameContui.minimiseCont.onClick = function(widget)
         for i, container in ipairs(getContainers()) do
-            local containerWindow = container.window
-            containerWindow:setContentHeight(34)
+            if container.window then
+                container.window:setContentHeight(34)
+            end
         end
     end
 
@@ -411,6 +536,9 @@ if rootWidget then
     renameContui.title.onClick = function(widget)
         config.enabled = not config.enabled
         widget:setOn(config.enabled)
+        if config.enabled then
+            checkAndOpenNextContainer()
+        end
     end
 
     contListWindow.closeButton.onClick = function(widget)
@@ -441,31 +569,32 @@ if rootWidget then
     end
     contListWindow.lootBag:setChecked(config.lootBag)
 
+    local currentSelectedIndex = nil
+
     local function refreshSortList(k, t)
         t = t or {}
         UI.Container(function()
             t = contListWindow.sortList:getItems()
-            config.list[k].items = t
-            end, true, nil, contListWindow.sortList) 
+            if k and config.list and config.list[k] then
+                config.list[k].items = t
+            end
+        end, true, nil, contListWindow.sortList) 
         contListWindow.sortList:setItems(t)
     end
-    refreshSortList(t)
 
     local refreshContNames = function(tFocus)
         local storageVal = config.list
+        contListWindow.itemList:destroyChildren()
         if storageVal and #storageVal > 0 then
-            for i, child in pairs(contListWindow.itemList:getChildren()) do
-                child:destroy()
-            end
             for k, entry in pairs(storageVal) do
                 local label = g_ui.createWidget("BackpackName", contListWindow.itemList)
                 label.onMouseRelease = function()
-                    contListWindow.contId:setItemId(entry.item)
-                    contListWindow.contName:setText(entry.value)
+                    currentSelectedIndex = k
+                    contListWindow.contId:setItemId(entry.item or 0)
+                    contListWindow.contName:setText(entry.value or "")
                     if not entry.items then
                         entry.items = {}
                     end
-                    contListWindow.sortList:setItems(entry.items)
                     refreshSortList(k, entry.items)
                 end
                 label.enabled.onClick = function(widget)
@@ -478,19 +607,20 @@ if rootWidget then
                     table.removevalue(config.list, entry)
                     label:destroy()
                 end
-                label.state:setChecked(entry.min)
+                label.state:setChecked(entry.min or false)
                 label.state.onClick = function(widget)
                     entry.min = not entry.min
                     label.state:setChecked(entry.min)
                     label.state:setColor(entry.min and '#00FF00' or '#FF0000')
                     label.state:setTooltip(entry.min and 'Open Minimised' or 'Do not minimise')
                 end
+                label.openNext:setChecked(entry.openNext or false)
                 label.openNext.onClick = function(widget)
                     entry.openNext = not entry.openNext
                     label.openNext:setChecked(entry.openNext)
                     label.openNext:setColor(entry.openNext and '#00FF00' or '#FF0000')
                 end
-                label:setText(entry.value)
+                label:setText(entry.value or ("BP " .. tostring(entry.item or 0)))
                 label.enabled:setChecked(entry.enabled)
                 label.enabled:setTooltip(entry.enabled and 'Disable' or 'Enable')
                 label.enabled:setImageColor(entry.enabled and '#00FF00' or '#FF0000')
@@ -502,19 +632,24 @@ if rootWidget then
                     tFocus = label
                 end
             end
-            if tFocus then contListWindow.itemList:focusChild(tFocus) end
+            if tFocus and type(tFocus) ~= "number" then contListWindow.itemList:focusChild(tFocus) end
         end
     end
+
     contListWindow.addItem.onClick = function(widget)
         local id = contListWindow.contId:getItemId()
         local trigger = contListWindow.contName:getText()
 
-        if id > 100 and trigger:len() > 0 then
+        if id > 100 then
+            if not trigger or trigger:len() == 0 then
+                trigger = "BP " .. tostring(id)
+            end
             local ifind = findItemsInArray(config.list, id)
             if ifind then
-                config.list[ifind] = { item = id, value = trigger, enabled = config.list[ifind].enabled, min = config.list[ifind].min, items = config.list[ifind].items}
+                config.list[ifind].item = id
+                config.list[ifind].value = trigger
             else
-                table.insert(config.list, { item = id, value = trigger, enabled = true, min = false, items = {} })
+                table.insert(config.list, { item = id, value = trigger, enabled = true, min = false, openNext = false, items = {} })
             end
             contListWindow.contId:setItemId(0)
             contListWindow.contName:setText('')
@@ -528,53 +663,62 @@ if rootWidget then
             contListWindow.contName:setColor('red')
         end
     end
+
     refreshContNames()
 end
 
 onContainerOpen(function(container, previousContainer)
-    if not container.window then return end
+    if not container or not container.window then return end
     local containerWindow = container.window
-    if not previousContainer then
-        containerWindow:setContentHeight(34)
-    end
+    local cItem = container:getContainerItem()
+    local cId = cItem and cItem:getId() or nil
 
-    local storageVal = config.list
-    if storageVal and #storageVal > 0 then
-        for _, entry in pairs(storageVal) do
-            if entry.enabled and string.find(container:getContainerItem():getId(), entry.item) then
+    if cId and config.list and #config.list > 0 then
+        for _, entry in pairs(config.list) do
+            if entry.enabled and entry.item == cId then
                 if entry.min then
                     containerWindow:minimize()
                 end
-                if renameContui.title:isOn() then
+                if entry.value and #entry.value > 0 then
                     containerWindow:setText(entry.value)
                 end
                 if entry.openNext then
                     for i, item in ipairs(container:getItems()) do
                         if item:getId() == entry.item then
-                            local time = #storageVal * 250
-                            schedule(time, function()
-                                time = time + 250
+                            schedule(250, function()
                                 g_game.open(item)
                             end)
+                            break
                         end
                     end
                 end
+                break
             end
         end
+    end
+
+    if config.enabled then
+        schedule(200, function()
+            checkAndOpenNextContainer()
+        end)
     end
 end)
 
 local function nameContainersOnLogin()
+    if not config.list or #config.list == 0 then return end
     for i, container in ipairs(getContainers()) do
-        if renameContui.title:isOn() then
-            if not container.window then return end
-            local containerWindow = container.window
-            local storageVal = config.list
-            if storageVal and #storageVal > 0 then
-                for _, entry in pairs(storageVal) do
-                    if entry.enabled and string.find(container:getContainerItem():getId(), entry.item) then
-                        containerWindow:setText(entry.value)
+        local cItem = container:getContainerItem()
+        local cId = cItem and cItem:getId() or nil
+        if cId and container.window then
+            for _, entry in pairs(config.list) do
+                if entry.enabled and entry.item == cId then
+                    if entry.value and #entry.value > 0 then
+                        container.window:setText(entry.value)
                     end
+                    if entry.min then
+                        container.window:minimize()
+                    end
+                    break
                 end
             end
         end
@@ -582,93 +726,44 @@ local function nameContainersOnLogin()
 end
 nameContainersOnLogin()
 
-local function moveItem(item, destination)
-    return g_game.move(item, destination:getSlotPosition(destination:getItemsCount()), item:getCount())
-end
+local mainLoop = macro(350, function()
+    if not g_game.isOnline() then return end
 
-local function properTable(t)
-    local r = {}
-    for _, entry in pairs(t) do
-      if type(entry) == "number" then
-        table.insert(r, entry)
-      else
-        table.insert(r, entry.id)
-      end
+    -- 1. Auto open BPs if enabled
+    if config.enabled then
+        checkAndOpenNextContainer()
     end
-    return r
-end
 
-local mainLoop = macro(150, function(macro)
-    if not config.sort and not config.purse then return end
-
-    local storageVal = config.list
-    for _, entry in pairs(storageVal) do
-        local dId = entry.item
-        local items = properTable(entry.items)
-        -- sorting
-        if config.sort then
-            for _, container in pairs(getContainers()) do
-                local cName = container:getName():lower()
-                if not cName:find("depot") and not cName:find("depot") and not cName:find("quiver") then
-                    local cId = container:getContainerItem():getId()
-                    for __, item in ipairs(container:getItems()) do
-                        local id = item:getId()
-                        if table.find(items, id) and cId ~= dId then
-                            local destination = getContainerByItem(dId, true)
-                            if destination and not containerIsFull(destination) then
-                                return moveItem(item, destination)
+    -- 2. Sort items if enabled
+    if config.sort and config.list and #config.list > 0 then
+        for _, entry in pairs(config.list) do
+            if entry.enabled and entry.items and #entry.items > 0 then
+                local dId = entry.item
+                local items = properTable(entry.items)
+                for _, container in pairs(getContainers()) do
+                    local cName = container:getName():lower()
+                    local cItem = container:getContainerItem()
+                    local cId = cItem and cItem:getId() or 0
+                    if not cName:find("depot") and not cName:find("quiver") and cId ~= dId then
+                        for _, item in ipairs(container:getItems()) do
+                            if table.find(items, item:getId()) then
+                                local destination = getContainerByItem(dId, true)
+                                if destination and not containerIsFull(destination) then
+                                    return moveItem(item, destination)
+                                end
                             end
                         end
                     end
                 end
             end
         end
-        -- keep open / purse 23396
-        if config.forceOpen then
-            local container = getContainerByItem(dId)
-            if not container then
-                local t = {getBack(), getAmmo(), getFinger(), getNeck(), getLeft(), getRight()}
-                for i=1,#t do
-                    local slot = t[i]
-                    if slot and slot:getId() == dId then
-                        return g_game.open(slot)
-                    end
-                end
-                local cItem = findItem(dId)
-                if cItem then
-                    return g_game.open(cItem)
-                end
-            end
-        end
     end
-    if config.purse and config.forceOpen and not getContainerByItem(23396) then
-        return use(getPurse())
-    end
-    if config.lootBag and config.forceOpen and not getContainerByItem(23721) then
-        if findItem(23721) then
-            g_game.open(findItem(23721), getContainerByItem(23396))
-        else
-            return use(getPurse())
-        end
-    end
-    macro:setOff()
-end)
-
-
-onContainerOpen(function(container, previousContainer)
-    mainLoop:setOn()
-end)
-  
-onAddItem(function(container, slot, item, oldItem)
-    mainLoop:setOn()
-end)
-
-onPlayerInventoryChange(function(slot, item, oldItem)
-    mainLoop:setOn()
 end)
 
 onContainerClose(function(container)
-    if not container.lootContainer then
-        mainLoop:setOn()
+    if config.enabled then
+        schedule(250, function()
+            checkAndOpenNextContainer()
+        end)
     end
 end)
