@@ -33,6 +33,9 @@ end
 if config.singleSpell == nil then
   config.singleSpell = "exori frigo"
 end
+if not config.singleRuneId or config.singleRuneId <= 0 then
+  config.singleRuneId = 3155
+end
 if config.singleApproach == nil then
   config.singleApproach = true
 end
@@ -87,19 +90,50 @@ Panel
 
 local runeNames = {
   [3155] = "SD",
+  [2268] = "SD",
   [3198] = "HMM",
+  [2311] = "HMM",
   [3158] = "Icicle",
+  [2271] = "Icicle",
   [3189] = "Fireball",
+  [2287] = "Fireball",
   [3179] = "Stalagmite",
+  [2292] = "Stalagmite",
   [3182] = "Holy",
+  [2295] = "Holy",
   [3200] = "Explo",
+  [2313] = "Explo",
   [3191] = "GFB",
+  [2304] = "GFB",
   [3161] = "Ava",
+  [2274] = "Ava",
   [3202] = "Thunder",
+  [2315] = "Thunder",
   [3175] = "Stone",
+  [2288] = "Stone",
   [3192] = "FBomb",
+  [2305] = "FBomb",
   [3173] = "PBomb",
-  [3149] = "EBomb"
+  [2286] = "PBomb",
+  [3149] = "EBomb",
+  [2262] = "EBomb"
+}
+
+local runeAltIds = {
+  [3155] = 2268, [2268] = 3155, -- SD
+  [3161] = 2274, [2274] = 3161, -- Avalanche
+  [3191] = 2304, [2304] = 3191, -- GFB
+  [3202] = 2315, [2315] = 3202, -- Thunderstorm
+  [3175] = 2288, [2288] = 3175, -- Stone Shower
+  [3158] = 2271, [2271] = 3158, -- Icicle
+  [3198] = 2311, [2311] = 3198, -- HMM
+  [3200] = 2313, [2313] = 3200, -- Explosion
+  [3182] = 2295, [2295] = 3182, -- Holy Missile
+  [3189] = 2287, [2287] = 3189, -- Fireball
+  [3179] = 2292, [2292] = 3179, -- Stalagmite
+  [3192] = 2305, [2305] = 3192, -- Fire Bomb
+  [3173] = 2286, [2286] = 3173, -- Poison Bomb
+  [3149] = 2262, [2262] = 3149  -- Energy Bomb
 }
 
 local function getRuneShortName(id)
@@ -141,6 +175,10 @@ end
 -- Create configuration window
 local runeWindow = UI.createWindow('TirarRunaWindow')
 runeWindow:hide()
+
+-- Banderas de proteccion contra recursion en eventos de UI (evita que el cliente crashee/se cierre)
+local updatingSingleUI = false
+local updatingAreaUI = false
 
 -- Populate Mode ComboBox
 local modes = {
@@ -193,6 +231,9 @@ for _, r in ipairs(areaRunes) do
 end
 
 local function setSingleOptionUI()
+  if updatingSingleUI then return end
+  updatingSingleUI = true
+
   if config.singleType == "spell" then
     local currentSpell = config.singleSpell or "exori frigo"
     local found = false
@@ -226,9 +267,14 @@ local function setSingleOptionUI()
     runeWindow.singlePanel.singleId:setText(tostring(currentRune))
     runeWindow.singlePanel.singleIdLabel:setText("Item ID:")
   end
+
+  updatingSingleUI = false
 end
 
 local function setAreaRuneOption(runeId)
+  if updatingAreaUI then return end
+  updatingAreaUI = true
+
   local found = false
   for _, r in ipairs(areaRunes) do
     if r.id == runeId and r.id ~= 0 then
@@ -242,6 +288,8 @@ local function setAreaRuneOption(runeId)
   end
   runeWindow.areaPanel.areaItem:setItemId(runeId)
   runeWindow.areaPanel.areaId:setText(tostring(runeId))
+
+  updatingAreaUI = false
 end
 
 -- Init values in window
@@ -264,7 +312,7 @@ runeWindow.singleApproach:setChecked(config.singleApproach)
 runeWindow.autoTarget:setChecked(config.autoTarget)
 runeWindow.safePvp:setChecked(config.safePvp)
 
--- Event listeners
+-- Event listeners con proteccion completa contra recursividad infinita
 runeWindow.modeCombo.onOptionChange = function(widget, option, data)
   for _, m in ipairs(modes) do
     if m.text == option then
@@ -276,6 +324,9 @@ runeWindow.modeCombo.onOptionChange = function(widget, option, data)
 end
 
 runeWindow.singlePanel.singleCombo.onOptionChange = function(widget, option, data)
+  if updatingSingleUI then return end
+  updatingSingleUI = true
+
   for _, opt in ipairs(singleOptions) do
     if opt.text == option then
       if opt.type == "spell" then
@@ -298,10 +349,13 @@ runeWindow.singlePanel.singleCombo.onOptionChange = function(widget, option, dat
       break
     end
   end
+
+  updatingSingleUI = false
   updateStatus()
 end
 
 runeWindow.singlePanel.singleItem.onItemChange = function(widget)
+  if updatingSingleUI then return end
   local itemId = widget:getItemId()
   if itemId and itemId > 0 then
     config.singleType = "rune"
@@ -312,23 +366,53 @@ runeWindow.singlePanel.singleItem.onItemChange = function(widget)
 end
 
 runeWindow.singlePanel.singleId.onTextChange = function(widget, text)
+  if updatingSingleUI then return end
   text = text:trim()
   local num = tonumber(text)
   if num and num > 0 then
     config.singleType = "rune"
     config.singleRuneId = num
+    updatingSingleUI = true
     runeWindow.singlePanel.singleItem:setItemId(num)
     runeWindow.singlePanel.singleIdLabel:setText("Item ID:")
+    local found = false
+    for _, opt in ipairs(singleOptions) do
+      if opt.type == "rune" and opt.id == num then
+        runeWindow.singlePanel.singleCombo:setOption(opt.text)
+        found = true
+        break
+      end
+    end
+    if not found then
+      runeWindow.singlePanel.singleCombo:setOption("[Runa] Custom ID")
+    end
+    updatingSingleUI = false
   elseif text:len() > 0 then
     config.singleType = "spell"
     config.singleSpell = text
+    updatingSingleUI = true
     runeWindow.singlePanel.singleItem:setItemId(0)
     runeWindow.singlePanel.singleIdLabel:setText("Spell:")
+    local found = false
+    for _, opt in ipairs(singleOptions) do
+      if opt.type == "spell" and opt.spell == text and opt.text ~= "[Spell] Personalizada" then
+        runeWindow.singlePanel.singleCombo:setOption(opt.text)
+        found = true
+        break
+      end
+    end
+    if not found then
+      runeWindow.singlePanel.singleCombo:setOption("[Spell] Personalizada")
+    end
+    updatingSingleUI = false
   end
   updateStatus()
 end
 
 runeWindow.areaPanel.areaCombo.onOptionChange = function(widget, option, data)
+  if updatingAreaUI then return end
+  updatingAreaUI = true
+
   for _, r in ipairs(areaRunes) do
     if r.text == option then
       if r.id > 0 then
@@ -339,10 +423,13 @@ runeWindow.areaPanel.areaCombo.onOptionChange = function(widget, option, data)
       break
     end
   end
+
+  updatingAreaUI = false
   updateStatus()
 end
 
 runeWindow.areaPanel.areaItem.onItemChange = function(widget)
+  if updatingAreaUI then return end
   local itemId = widget:getItemId()
   if itemId and itemId > 0 and itemId ~= config.areaRuneId then
     config.areaRuneId = itemId
@@ -352,9 +439,11 @@ runeWindow.areaPanel.areaItem.onItemChange = function(widget)
 end
 
 runeWindow.areaPanel.areaId.onTextChange = function(widget, text)
-  local val = tonumber(text)
+  if updatingAreaUI then return end
+  local val = tonumber(text:trim())
   if val and val > 0 and val ~= config.areaRuneId then
     config.areaRuneId = val
+    updatingAreaUI = true
     runeWindow.areaPanel.areaItem:setItemId(val)
     local found = false
     for _, r in ipairs(areaRunes) do
@@ -367,6 +456,7 @@ runeWindow.areaPanel.areaId.onTextChange = function(widget, text)
     if not found then
       runeWindow.areaPanel.areaCombo:setOption("Personalizada")
     end
+    updatingAreaUI = false
     updateStatus()
   end
 end
@@ -440,18 +530,44 @@ end
 -- Reliable rune caster: uses hotkey inventory first, falls back to open backpacks
 local function shootRune(runeId, targetThing)
   if not runeId or runeId <= 0 or not targetThing then return false end
+
+  -- Safeguard: ensure creature target is alive and valid
+  if targetThing.isCreature and targetThing:isCreature() then
+    local p = targetThing:getPosition()
+    if not p or p.z ~= posz() or targetThing:getHealthPercent() <= 0 then
+      return false
+    end
+  end
+
+  local altId = runeAltIds[runeId]
+  local subType = (g_game.getClientVersion and g_game.getClientVersion() >= 860) and 0 or 1
   local ok = false
+
+  -- 1. Intentar usar por inventario / hotkey directo con runeId
   pcall(function()
-    ok = g_game.useInventoryItemWith(runeId, targetThing, 0)
+    g_game.useInventoryItemWith(runeId, targetThing, subType)
+    ok = true
   end)
+
+  -- 2. Si no funciono, intentar con ID alternativo (client ID vs server ID)
+  if not ok and altId then
+    pcall(function()
+      g_game.useInventoryItemWith(altId, targetThing, subType)
+      ok = true
+    end)
+  end
+
+  -- 3. Si no esta en hotkeys, buscar item en mochilas abiertas
   if not ok then
-    local it = findItem(runeId)
+    local it = findItem(runeId) or (altId and findItem(altId))
     if it then
       pcall(function()
-        ok = g_game.useWith(it, targetThing, 0)
+        g_game.useWith(it, targetThing, subType)
+        ok = true
       end)
     end
   end
+
   return ok
 end
 
@@ -703,6 +819,10 @@ macro(20, function()
   end
 
   local tPos = targetToShoot:getPosition()
+  if not tPos or tPos.z ~= pz or targetToShoot:getHealthPercent() <= 0 then
+    return
+  end
+
   local dist = getDistanceBetween(playerPos, tPos)
 
   if config.singleType == "spell" and config.singleSpell and config.singleSpell:len() > 0 then
