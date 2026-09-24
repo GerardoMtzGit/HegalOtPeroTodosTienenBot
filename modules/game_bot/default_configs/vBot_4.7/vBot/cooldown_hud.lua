@@ -1,6 +1,7 @@
 -- Cooldown HUD 2x3 - Visualizador de Cooldowns Flotante sobre el Personaje
--- Muestra hasta 6 spells y runas en cooldown con 20% de visibilidad (minimalista)
+-- Muestra hasta 6 spells y runas en cooldown con 35% de visibilidad (minimalista y nitido)
 -- Desaparecen automaticamente en cuanto estan disponibles nuevamente
+-- Utiliza los iconos exactos recortados de la imagen de spells del usuario
 
 setDefaultTab("Iconos")
 
@@ -8,7 +9,7 @@ local panelName = "cooldownHud"
 if not storage[panelName] then
   storage[panelName] = {
     enabled = true,
-    opacity = 20, -- 20% de visibilidad por defecto
+    opacity = 35, -- 35% de visibilidad (aumentado un 15% como solicitado)
     lockPosition = true,
     showTimer = true,
     pos = { x = 0, y = -75 }
@@ -16,7 +17,7 @@ if not storage[panelName] then
 end
 
 local config = storage[panelName]
-if config.opacity == nil then config.opacity = 20 end
+if config.opacity == nil or config.opacity == 20 then config.opacity = 35 end
 if config.lockPosition == nil then config.lockPosition = true end
 if config.showTimer == nil then config.showTimer = true end
 if not config.pos then config.pos = { x = 0, y = -75 } end
@@ -118,6 +119,71 @@ local SpellCatalog = {
   ["exana mort"] = { id = 81, dur = 1000, name = "Cure Curse" },
   ["exana pox"] = { id = 29, dur = 1000, name = "Cure Poison" }
 }
+
+-- Mapeo de imagenes personalizadas extraidas directamente de las spells del usuario
+local CustomSpellImages = {
+  -- Terra Wave
+  ["exevo tera hur"] = "/images/game/spells/custom/terra_wave",
+  ["terra wave"] = "/images/game/spells/custom/terra_wave",
+  ["icon_117"] = "/images/game/spells/custom/terra_wave",
+  ["117"] = "/images/game/spells/custom/terra_wave",
+
+  -- Avalanche
+  ["adori mas frigo"] = "/images/game/spells/custom/avalanche",
+  ["avalanche"] = "/images/game/spells/custom/avalanche",
+  ["rune_3161"] = "/images/game/spells/custom/avalanche",
+  ["rune_2274"] = "/images/game/spells/custom/avalanche",
+  ["3161"] = "/images/game/spells/custom/avalanche",
+  ["2274"] = "/images/game/spells/custom/avalanche",
+  ["exevo gran mas frigo"] = "/images/game/spells/custom/avalanche",
+  ["icon_118"] = "/images/game/spells/custom/avalanche",
+  ["118"] = "/images/game/spells/custom/avalanche",
+
+  -- Magic Shield
+  ["utamo vita"] = "/images/game/spells/custom/magic_shield",
+  ["magic shield"] = "/images/game/spells/custom/magic_shield",
+  ["icon_44"] = "/images/game/spells/custom/magic_shield",
+  ["44"] = "/images/game/spells/custom/magic_shield",
+
+  -- Haste / Strong Haste
+  ["utani hur"] = "/images/game/spells/custom/haste",
+  ["utani gran hur"] = "/images/game/spells/custom/haste",
+  ["haste"] = "/images/game/spells/custom/haste",
+  ["strong haste"] = "/images/game/spells/custom/haste",
+  ["icon_6"] = "/images/game/spells/custom/haste",
+  ["icon_41"] = "/images/game/spells/custom/haste",
+  ["6"] = "/images/game/spells/custom/haste",
+  ["41"] = "/images/game/spells/custom/haste",
+
+  -- Sudden Death (SD)
+  ["adori gran mort"] = "/images/game/spells/custom/sd",
+  ["sd"] = "/images/game/spells/custom/sd",
+  ["rune_3155"] = "/images/game/spells/custom/sd",
+  ["rune_2268"] = "/images/game/spells/custom/sd",
+  ["3155"] = "/images/game/spells/custom/sd",
+  ["2268"] = "/images/game/spells/custom/sd",
+}
+
+local function getCustomImage(c)
+  if not c then return nil end
+  if c.customImage then return c.customImage end
+  if c.spellWords and CustomSpellImages[c.spellWords:lower()] then
+    return CustomSpellImages[c.spellWords:lower()]
+  end
+  if c.name and CustomSpellImages[c.name:lower()] then
+    return CustomSpellImages[c.name:lower()]
+  end
+  if c.key and CustomSpellImages[c.key:lower()] then
+    return CustomSpellImages[c.key:lower()]
+  end
+  if c.iconId and CustomSpellImages[tostring(c.iconId)] then
+    return CustomSpellImages[tostring(c.iconId)]
+  end
+  if c.runeId and CustomSpellImages[tostring(c.runeId)] then
+    return CustomSpellImages[tostring(c.runeId)]
+  end
+  return nil
+end
 
 -- Funcion para calcular el clip en la hoja de sprites de 32x32 (12 columnas por fila)
 local function getSpellClip(iconId)
@@ -291,7 +357,7 @@ local function createOrUpdateHud()
     }
   end
 
-  local opac = math.min(1.0, math.max(0.1, (config.opacity or 20) / 100))
+  local opac = math.min(1.0, math.max(0.1, (config.opacity or 35) / 100))
   hudWidget:setOpacity(opac)
   hudWidget:setVisible(config.enabled)
 
@@ -377,7 +443,13 @@ macro(50, function()
         slot:show()
         local remSec = math.max(0, (c.endTime - nowMs) / 1000)
 
-        if c.type == "rune" then
+        local customImg = getCustomImage(c)
+        if customImg then
+          slot.runeItem:hide()
+          slot.spellIcon:show()
+          slot.spellIcon:setImageSource(customImg)
+          slot.spellIcon:setImageClip("0 0 32 32")
+        elseif c.type == "rune" then
           slot.spellIcon:hide()
           slot.runeItem:show()
           slot.runeItem:setItemId(c.runeId or 3155)
@@ -404,7 +476,7 @@ macro(50, function()
     hudWidget:setBorderColor("#00000000")
     hudWidget:setBackgroundColor("#00000000")
   else
-    hudWidget:setBorderColor("#3b82f622")
+    hudWidget:setBorderColor("#3b82f633")
     hudWidget:setBackgroundColor("#00000022")
   end
 end)
@@ -509,7 +581,7 @@ ui.enabledSwitch.onClick = function(widget)
   createOrUpdateHud()
 end
 
-ui.rowOpacity.opacityInput:setText(tostring(config.opacity or 20))
+ui.rowOpacity.opacityInput:setText(tostring(config.opacity or 35))
 ui.rowOpacity.opacityInput.onTextChange = function(widget, text)
   local num = tonumber(text)
   if num and num >= 10 and num <= 100 then
@@ -538,14 +610,14 @@ ui.centerBtn.onClick = function()
   end
 end
 
--- Demostracion con los 5 iconos del usuario para probar al instante
+-- Demostracion con los 5 iconos extraidos de la imagen de spells del usuario
 ui.demoBtn.onClick = function()
   local nowMs = now or (os.time() * 1000)
   activeCooldowns = {
-    { key = "demo_1", type = "spell", iconId = 117, name = "Terra Wave", duration = 4000, startTime = nowMs, endTime = nowMs + 4000 },
-    { key = "demo_2", type = "rune", runeId = 3161, name = "Avalanche", duration = 2000, startTime = nowMs, endTime = nowMs + 2000 },
-    { key = "demo_3", type = "spell", iconId = 44, name = "Magic Shield", duration = 5000, startTime = nowMs, endTime = nowMs + 5000 },
-    { key = "demo_4", type = "spell", iconId = 6, name = "Haste", duration = 2500, startTime = nowMs, endTime = nowMs + 2500 },
-    { key = "demo_5", type = "rune", runeId = 3155, name = "SD", duration = 3000, startTime = nowMs, endTime = nowMs + 3000 }
+    { key = "demo_1", type = "spell", iconId = 117, name = "Terra Wave", spellWords = "exevo tera hur", customImage = "/images/game/spells/custom/terra_wave", duration = 4000, startTime = nowMs, endTime = nowMs + 4000 },
+    { key = "demo_2", type = "rune", runeId = 3161, name = "Avalanche", spellWords = "adori mas frigo", customImage = "/images/game/spells/custom/avalanche", duration = 2000, startTime = nowMs, endTime = nowMs + 2000 },
+    { key = "demo_3", type = "spell", iconId = 44, name = "Magic Shield", spellWords = "utamo vita", customImage = "/images/game/spells/custom/magic_shield", duration = 5000, startTime = nowMs, endTime = nowMs + 5000 },
+    { key = "demo_4", type = "spell", iconId = 6, name = "Haste", spellWords = "utani hur", customImage = "/images/game/spells/custom/haste", duration = 2500, startTime = nowMs, endTime = nowMs + 2500 },
+    { key = "demo_5", type = "rune", runeId = 3155, name = "SD", spellWords = "adori gran mort", customImage = "/images/game/spells/custom/sd", duration = 3000, startTime = nowMs, endTime = nowMs + 3000 }
   }
 end

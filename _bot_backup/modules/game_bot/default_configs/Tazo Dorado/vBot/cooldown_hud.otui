@@ -2,9 +2,9 @@ CooldownHudSlot < UIWidget
   size: 32 32
   focusable: false
   phantom: false
-  background-color: #050b14aa
+  background-color: #050b1455
   border-width: 1
-  border-color: #3b82f644
+  border-color: #ffffff33
 
   UIWidget
     id: spellIcon
@@ -37,8 +37,8 @@ CooldownHudWidget < UIWidget
   draggable: true
   background-color: #00000022
   border-width: 1
-  border-color: #3b82f622
-  opacity: 0.20
+  border-color: #3b82f633
+  opacity: 0.35
 
   anchors.horizontalCenter: parent.horizontalCenter
   anchors.verticalCenter: parent.verticalCenter
