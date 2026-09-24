@@ -33,6 +33,7 @@ local luaFiles = {
   "combo",
   "HealBot",
   "icons_tab",
+  "cooldown_hud",
   "new_healer",
   "AttackBot", -- last of major modules
   "ingame_editor",

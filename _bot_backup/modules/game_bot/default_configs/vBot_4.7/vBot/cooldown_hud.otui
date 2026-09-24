@@ -1,0 +1,82 @@
+CooldownHudSlot < UIWidget
+  size: 32 32
+  focusable: false
+  phantom: false
+  background-color: #050b14aa
+  border-width: 1
+  border-color: #3b82f644
+
+  UIWidget
+    id: spellIcon
+    anchors.fill: parent
+    phantom: true
+    visible: false
+
+  UIItem
+    id: runeItem
+    anchors.fill: parent
+    virtual: true
+    phantom: true
+    visible: false
+
+  Label
+    id: timerLabel
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-bottom: 1
+    font: verdana-9px
+    color: #ffffff
+    text-shadow: 1 1 black
+    phantom: true
+    text:
+
+CooldownHudWidget < UIWidget
+  size: 104 68
+  focusable: false
+  phantom: false
+  draggable: true
+  background-color: #00000022
+  border-width: 1
+  border-color: #3b82f622
+  opacity: 0.20
+
+  anchors.horizontalCenter: parent.horizontalCenter
+  anchors.verticalCenter: parent.verticalCenter
+  margin-top: -75
+
+  CooldownHudSlot
+    id: slot1
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-top: 1
+    margin-left: 1
+
+  CooldownHudSlot
+    id: slot2
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  CooldownHudSlot
+    id: slot3
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  CooldownHudSlot
+    id: slot4
+    anchors.top: slot1.bottom
+    anchors.left: slot1.left
+    margin-top: 2
+
+  CooldownHudSlot
+    id: slot5
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 2
+
+  CooldownHudSlot
+    id: slot6
+    anchors.top: prev.top
+    anchors.left: prev.right
+    margin-left: 2
