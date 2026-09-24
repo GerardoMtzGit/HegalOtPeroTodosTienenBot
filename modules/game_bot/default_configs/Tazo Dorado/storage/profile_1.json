@@ -123,9 +123,7 @@
   },
   "analyzers": {
     "lootChannel": true,
-    "customPrices": [
-
-    ],
+    "customPrices": [],
     "trackedLoot": {
       "34109": 3250806
     },
@@ -136,69 +134,97 @@
     "forceOpen": true,
     "list": [
       {
-        "items": [
-          {
-            "id": 22721,
-            "count": 39
-          },
-          {
-            "id": 38089,
-            "count": 30
-          },
-          {
-            "id": 38101,
-            "count": 11
-          }
-        ],
-        "value": "Main",
+        "value": "cosas randon",
+        "item": 2859,
         "enabled": true,
         "min": false,
-        "item": 37707
+        "openNext": false,
+        "items": []
       },
       {
-        "items": [
-          {
-            "id": 23374,
-            "count": 100
-          },
-          {
-            "id": 237,
-            "count": 0
-          }
-        ],
+        "value": "SET",
+        "item": 2867,
+        "enabled": true,
+        "min": false,
+        "openNext": false,
+        "items": []
+      },
+      {
+        "value": "Rings",
+        "item": 2861,
+        "enabled": true,
+        "min": false,
+        "openNext": false,
+        "items": []
+      },
+      {
+        "value": "Amuletos",
+        "item": 2869,
+        "enabled": true,
+        "min": false,
+        "openNext": false,
+        "items": []
+      },
+      {
+        "value": "tools",
+        "item": 2856,
+        "enabled": true,
+        "min": false,
+        "openNext": false,
+        "items": []
+      },
+      {
         "value": "pociones",
+        "item": 2872,
         "enabled": true,
         "min": false,
-        "item": 9601
+        "openNext": false,
+        "items": []
       },
       {
-        "items": [
-          {
-            "id": 25757,
-            "count": 100
-          }
-        ],
-        "value": "Flechas",
+        "value": "LOOT",
+        "item": 9602,
         "enabled": true,
         "min": false,
-        "item": 35849
+        "openNext": false,
+        "items": []
+      },
+      {
+        "value": "Creature product",
+        "item": 2864,
+        "enabled": true,
+        "min": false,
+        "openNext": false,
+        "items": []
+      },
+      {
+        "value": "Flechas",
+        "item": 2854,
+        "enabled": true,
+        "min": false,
+        "openNext": false,
+        "items": []
+      },
+      {
+        "value": "runas",
+        "item": 21411,
+        "enabled": true,
+        "min": false,
+        "openNext": false,
+        "items": []
       }
     ],
     "purse": false,
     "enabled": false,
-    "height": 170
+    "height": 360
   },
   "bestHit": 11587,
   "specialDeposit": {
     "height": 380,
-    "items": [
-
-    ]
+    "items": []
   },
   "EquipperPanel": {
-    "bosses": [
-
-    ],
+    "bosses": [],
     "enabled": false,
     "rules": [
       {
@@ -224,19 +250,13 @@
     ]
   },
   "playerList": {
-    "enemyList": [
-
-    ],
+    "enemyList": [],
     "outfits": false,
     "groupMembers": true,
-    "friendList": [
-
-    ],
+    "friendList": [],
     "highlight": false,
     "marks": false,
-    "blackList": [
-
-    ]
+    "blackList": []
   },
   "alarms": {
     "playerDetected": false,
@@ -285,9 +305,7 @@
   "BOTserver": {
     "manaInfo": true,
     "mwallInfo": true,
-    "mwalls": [
-
-    ],
+    "mwalls": [],
     "outfit": true,
     "broadcasts": true,
     "vocation": true
@@ -339,9 +357,7 @@
   ],
   "sendPartyAnalyzerData": false,
   "newHealer": {
-    "vocations": [
-
-    ],
+    "vocations": [],
     "priorities": [
       {
         "custom": true,
@@ -375,12 +391,8 @@
       }
     ],
     "enabled": false,
-    "groups": [
-
-    ],
-    "customPlayers": [
-
-    ],
+    "groups": [],
+    "customPlayers": [],
     "conditions": {
       "druids": false,
       "knights": true,
