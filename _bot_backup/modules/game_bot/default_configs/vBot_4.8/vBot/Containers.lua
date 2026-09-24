@@ -4,14 +4,14 @@ local panelName = "renameContainers"
 if type(storage[panelName]) ~= "table" then
     storage[panelName] = {
         enabled = false,
-        height = 170,
+        height = 300,
         purse = false,
         sort = false,
-        forceOpen = false,
+        forceOpen = true,
         lootBag = false,
         list = {
             {
-                value = "Main Backpack",
+                value = "Main",
                 enabled = true,
                 item = 9601,
                 min = false,
@@ -19,28 +19,20 @@ if type(storage[panelName]) ~= "table" then
                 items = { 3081, 3048 }
             },
             {
-                value = "Runes",
+                value = "pociones",
                 enabled = true,
                 item = 2866,
-                min = true,
+                min = false,
                 openNext = false,
                 items = { 3161, 3180 }
             },
             {
-                value = "Money",
+                value = "Flechas",
                 enabled = true,
                 item = 2871,
-                min = true,
+                min = false,
                 openNext = false,
                 items = { 3031, 3035, 3043 }
-            },
-            {
-                value = "Purse",
-                enabled = true,
-                item = 23396,
-                min = true,
-                openNext = false,
-                items = {}
             }
         }
     }
@@ -50,8 +42,9 @@ local config = storage[panelName]
 if config.enabled == nil then config.enabled = false end
 if config.purse == nil then config.purse = false end
 if config.sort == nil then config.sort = false end
-if config.forceOpen == nil then config.forceOpen = false end
+if config.forceOpen == nil then config.forceOpen = true end
 if config.lootBag == nil then config.lootBag = false end
+if not config.height or config.height < 220 then config.height = 300 end
 if type(config.list) ~= "table" then config.list = {} end
 
 UI.Separator()
@@ -110,12 +103,13 @@ Panel
 renameContui:setId(panelName)
 
 g_ui.loadUIFromString([[
-BackpackName < Label
+BackpackName < Panel
   background-color: alpha
-  text-offset: 18 2
   focusable: true
-  height: 17
-  font: verdana-11px-rounded
+  height: 22
+
+  $focus:
+    background-color: #ffffff22
 
   CheckBox
     id: enabled
@@ -123,54 +117,89 @@ BackpackName < Label
     anchors.verticalCenter: parent.verticalCenter
     width: 15
     height: 15
-    margin-top: 1
-    margin-left: 3
+    margin-left: 2
 
-  $focus:
-    background-color: #00000055
+  Label
+    id: title
+    anchors.left: prev.right
+    anchors.right: upBtn.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 4
+    margin-right: 4
+    text-auto-resize: false
+    font: verdana-11px-rounded
+
+  Button
+    id: upBtn
+    !text: tr('^')
+    !tooltip: tr('Subir orden (abrir antes)')
+    anchors.right: downBtn.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 2
+    width: 16
+    height: 16
+
+  Button
+    id: downBtn
+    !text: tr('v')
+    !tooltip: tr('Bajar orden (abrir despues)')
+    anchors.right: state.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 2
+    width: 16
+    height: 16
 
   Button
     id: state
     !text: tr('M')
-    anchors.right: remove.left
+    !tooltip: tr('Minimizar al abrir')
+    anchors.right: openNext.left
     anchors.verticalCenter: parent.verticalCenter
-    margin-right: 1
-    width: 15
-    height: 15
-
-  Button
-    id: remove
-    !text: tr('X')
-    !tooltip: tr('Remove')
-    anchors.right: parent.right
-    anchors.verticalCenter: parent.verticalCenter
-    margin-right: 15
-    width: 15
-    height: 15
+    margin-right: 2
+    width: 16
+    height: 16
 
   Button
     id: openNext
     !text: tr('N')
-    anchors.right: state.left
+    !tooltip: tr('Abrir sub-mochila del mismo tipo adentro')
+    anchors.right: remove.left
     anchors.verticalCenter: parent.verticalCenter
-    margin-right: 1
-    width: 15
-    height: 15
-    tooltip: Open container inside with the same ID.
+    margin-right: 2
+    width: 16
+    height: 16
+
+  Button
+    id: remove
+    !text: tr('X')
+    !tooltip: tr('Eliminar de la lista')
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 14
+    width: 16
+    height: 16
 
 ContListsWindow < MainWindow
-  !text: tr('Container Names & Auto Open')
-  size: 465 170
+  !text: tr('Configurar Mochilas (Orden de Apertura)')
+  size: 530 300
   @onEscape: self:hide()
+
+  Label
+    id: listTitle
+    anchors.left: parent.left
+    anchors.top: parent.top
+    text: Lista de Mochilas (se abren en este orden):
+    font: verdana-11px-rounded
+    margin-left: 3
 
   TextList
     id: itemList
     anchors.left: parent.left
-    anchors.top: parent.top
+    anchors.top: prev.bottom
     anchors.bottom: separator.top
-    width: 200
+    width: 270
     margin-bottom: 6
-    margin-top: 3
+    margin-top: 5
     margin-left: 3
     vertical-scrollbar: itemListScrollBar
 
@@ -194,17 +223,17 @@ ContListsWindow < MainWindow
   Label
     id: lblName
     anchors.left: sep.right
-    anchors.top: sep.top
-    width: 70
-    text: Name:
+    anchors.top: parent.top
+    width: 75
+    text: Nombre BP:
     margin-left: 10
-    margin-top: 3
+    margin-top: 5
     font: verdana-11px-rounded
 
   TextEdit
     id: contName
     anchors.left: lblName.right
-    anchors.top: sep.top
+    anchors.top: lblName.top
     anchors.right: parent.right
     font: verdana-11px-rounded
 
@@ -212,40 +241,69 @@ ContListsWindow < MainWindow
     id: lblCont
     anchors.left: lblName.left
     anchors.verticalCenter: contId.verticalCenter
-    width: 70
-    text: Container:
+    width: 75
+    text: Mochila:
     font: verdana-11px-rounded
 
   BotItem
     id: contId
     anchors.left: contName.left
     anchors.top: contName.bottom
-    margin-top: 3
-
-  BotContainer
-    id: sortList
-    anchors.left: prev.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    anchors.bottom: separator.top
-    margin-bottom: 6
-    margin-top: 3
+    margin-top: 6
 
   Label
-    anchors.left: lblCont.left
-    anchors.verticalCenter: sortList.verticalCenter
-    width: 70
-    text: Items: 
+    id: lblIdText
+    anchors.left: contId.right
+    anchors.verticalCenter: contId.verticalCenter
+    margin-left: 10
+    text: O escribe ID:
+    font: verdana-11px-rounded
+
+  TextEdit
+    id: contIdInput
+    anchors.left: prev.right
+    anchors.verticalCenter: contId.verticalCenter
+    anchors.right: parent.right
+    margin-left: 5
+    width: 65
     font: verdana-11px-rounded
 
   Button
     id: addItem
-    anchors.right: contName.right
-    anchors.top: contName.bottom
-    margin-top: 5
-    text: Add
-    width: 40
+    anchors.right: parent.right
+    anchors.top: contId.bottom
+    margin-top: 8
+    text: + Guardar Mochila
+    width: 130
+    height: 22
     font: cipsoftFont
+
+  HorizontalSeparator
+    id: sepItems
+    anchors.left: sep.right
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 8
+    margin-left: 10
+
+  Label
+    id: lblSortItems
+    anchors.left: sep.right
+    anchors.top: prev.bottom
+    margin-top: 6
+    margin-left: 10
+    text: Items a ordenar aqui:
+    font: verdana-11px-rounded
+
+  BotContainer
+    id: sortList
+    anchors.left: sep.right
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    anchors.bottom: separator.top
+    margin-left: 10
+    margin-bottom: 6
+    margin-top: 4
 
   HorizontalSeparator
     id: separator
@@ -259,23 +317,10 @@ ContListsWindow < MainWindow
     anchors.left: parent.left
     anchors.bottom: parent.bottom
     text: Open Purse
-    tooltip: Opens Store/Charm Purse
-    width: 85
-    height: 15
-    margin-top: 2
+    tooltip: Abre la Store / Charm Purse automaticamente
+    width: 90
+    height: 16
     margin-left: 3
-    font: verdana-11px-rounded
-
-  CheckBox
-    id: sort
-    anchors.left: prev.right
-    anchors.bottom: parent.bottom
-    text: Sort Items
-    tooltip: Sort items based on items widget
-    width: 85
-    height: 15
-    margin-top: 2
-    margin-left: 15
     font: verdana-11px-rounded
 
   CheckBox
@@ -283,43 +328,30 @@ ContListsWindow < MainWindow
     anchors.left: prev.right
     anchors.bottom: parent.bottom
     text: Keep Open
-    tooltip: Will keep open containers all the time
-    width: 85
-    height: 15
-    margin-top: 2
-    margin-left: 15
+    tooltip: Si una mochila se cierra, la vuelve a abrir
+    width: 90
+    height: 16
+    margin-left: 12
     font: verdana-11px-rounded
 
   CheckBox
-    id: lootBag
+    id: sort
     anchors.left: prev.right
     anchors.bottom: parent.bottom
-    text: Loot Bag
-    tooltip: Open Loot Bag (gunzodus franchaise)
-    width: 85
-    height: 15
-    margin-top: 2
-    margin-left: 15
+    text: Sort Items
+    tooltip: Ordena items a sus mochilas correspondientes
+    width: 90
+    height: 16
+    margin-left: 12
     font: verdana-11px-rounded
 
   Button
     id: closeButton
-    !text: tr('Close')
+    !text: tr('Cerrar')
     font: cipsoftFont
     anchors.right: parent.right
     anchors.bottom: parent.bottom
-    size: 45 21
-    margin-top: 15
-
-  ResizeBorder
-    id: bottomResizeBorder
-    anchors.fill: separator
-    height: 3
-    minimum: 170
-    maximum: 245
-    margin-left: 3
-    margin-right: 3
-    background: #ffffff88
+    size: 55 21
 ]])
 
 function findItemsInArray(t, tfind)
@@ -373,18 +405,6 @@ local function isContainerOpen(id)
     return false
 end
 
-local function countOpenContainers(id)
-    if not id or id <= 0 then return 0 end
-    local count = 0
-    for _, c in pairs(getContainers()) do
-        local ci = c:getContainerItem()
-        if ci and ci:getId() == id then
-            count = count + 1
-        end
-    end
-    return count
-end
-
 local function isBackOpen()
     local back = getBack()
     if not back then return false end
@@ -402,15 +422,15 @@ local function checkAndOpenNextContainer()
     if not g_game.isOnline() then return false end
     if not config.enabled then return false end
 
-    local now = g_clock.millis()
-    if now < lastActionTime + 300 then
+    local currentNow = now or (os.time() * 1000)
+    if currentNow < lastActionTime + 350 then
         return false
     end
 
     -- 1. Main backpack on player (SlotBack)
     local back = getBack()
     if back and not isBackOpen() then
-        lastActionTime = now
+        lastActionTime = currentNow
         g_game.open(back)
         return true
     end
@@ -419,33 +439,33 @@ local function checkAndOpenNextContainer()
     if config.purse and not isContainerOpen(23396) then
         local purse = getPurse()
         if purse then
-            lastActionTime = now
+            lastActionTime = currentNow
             use(purse)
             return true
         end
     end
 
-    -- 3. Configured backpacks in list
+    -- 3. Configured backpacks in EXACT list order
     if config.list and #config.list > 0 then
         for _, entry in ipairs(config.list) do
             if entry.enabled and entry.item and entry.item > 100 then
                 local isOpen = isContainerOpen(entry.item)
                 if not isOpen then
-                    -- Check body slots first (right, left, ammo)
+                    -- Search in body slots (right, left, ammo)
                     local slots = {getRight(), getLeft(), getAmmo()}
                     for _, slotItem in ipairs(slots) do
                         if slotItem and slotItem:getId() == entry.item then
-                            lastActionTime = now
+                            lastActionTime = currentNow
                             g_game.open(slotItem)
                             return true
                         end
                     end
 
-                    -- Search in currently open containers
+                    -- Search in open containers
                     for _, c in pairs(getContainers()) do
                         for _, it in ipairs(c:getItems()) do
                             if it:getId() == entry.item then
-                                lastActionTime = now
+                                lastActionTime = currentNow
                                 g_game.open(it)
                                 return true
                             end
@@ -462,7 +482,7 @@ local function checkAndOpenNextContainer()
         if purseCont then
             for _, it in ipairs(purseCont:getItems()) do
                 if it:getId() == 23721 then
-                    lastActionTime = now
+                    lastActionTime = currentNow
                     g_game.open(it)
                     return true
                 end
@@ -470,7 +490,7 @@ local function checkAndOpenNextContainer()
         elseif config.purse then
             local purse = getPurse()
             if purse then
-                lastActionTime = now
+                lastActionTime = currentNow
                 use(purse)
                 return true
             end
@@ -507,17 +527,27 @@ if rootWidget then
     contListWindow = UI.createWindow('ContListsWindow', rootWidget)
     contListWindow:hide()
 
+    if not config.height or config.height < 220 then
+        config.height = 300
+    end
+    contListWindow:setHeight(config.height)
+    contListWindow:setWidth(530)
+
     contListWindow.onGeometryChange = function(widget, old, new)
-        if old.height == 0 then return end
-        config.height = new.height
+        if new.height >= 220 then
+            config.height = new.height
+        end
     end
 
-    contListWindow:setHeight(config.height or 170)
-
     renameContui.editContList.onClick = function(widget)
-        contListWindow:show()
-        contListWindow:raise()
-        contListWindow:focus()
+        if not contListWindow:isVisible() then
+            contListWindow:show()
+            contListWindow:raise()
+            contListWindow:focus()
+            refreshContNames()
+        else
+            contListWindow:hide()
+        end
     end
 
     renameContui.reopenCont.onClick = function(widget)
@@ -582,65 +612,109 @@ if rootWidget then
         contListWindow.sortList:setItems(t)
     end
 
-    local refreshContNames = function(tFocus)
+    refreshContNames = function(tFocus)
         local storageVal = config.list
         contListWindow.itemList:destroyChildren()
         if storageVal and #storageVal > 0 then
-            for k, entry in pairs(storageVal) do
-                local label = g_ui.createWidget("BackpackName", contListWindow.itemList)
-                label.onMouseRelease = function()
+            for k, entry in ipairs(storageVal) do
+                local row = g_ui.createWidget("BackpackName", contListWindow.itemList)
+                local displayText = string.format("#%d. %s (%d)", k, entry.value or "BP", entry.item or 0)
+                row.title:setText(displayText)
+
+                row.onMouseRelease = function()
                     currentSelectedIndex = k
                     contListWindow.contId:setItemId(entry.item or 0)
+                    contListWindow.contIdInput:setText(tostring(entry.item or 0))
                     contListWindow.contName:setText(entry.value or "")
                     if not entry.items then
                         entry.items = {}
                     end
                     refreshSortList(k, entry.items)
                 end
-                label.enabled.onClick = function(widget)
+
+                row.enabled.onClick = function(widget)
                     entry.enabled = not entry.enabled
-                    label.enabled:setChecked(entry.enabled)
-                    label.enabled:setTooltip(entry.enabled and 'Disable' or 'Enable')
-                    label.enabled:setImageColor(entry.enabled and '#00FF00' or '#FF0000')
+                    row.enabled:setChecked(entry.enabled)
+                    row.enabled:setTooltip(entry.enabled and 'Desactivar mochila' or 'Activar mochila')
+                    row.enabled:setImageColor(entry.enabled and '#00FF00' or '#FF0000')
                 end
-                label.remove.onClick = function(widget)
-                    table.removevalue(config.list, entry)
-                    label:destroy()
+
+                row.upBtn.onClick = function()
+                    if k > 1 then
+                        local temp = config.list[k]
+                        config.list[k] = config.list[k - 1]
+                        config.list[k - 1] = temp
+                        refreshContNames(temp.item)
+                    end
                 end
-                label.state:setChecked(entry.min or false)
-                label.state.onClick = function(widget)
+
+                row.downBtn.onClick = function()
+                    if k < #config.list then
+                        local temp = config.list[k]
+                        config.list[k] = config.list[k + 1]
+                        config.list[k + 1] = temp
+                        refreshContNames(temp.item)
+                    end
+                end
+
+                row.state:setChecked(entry.min or false)
+                row.state.onClick = function(widget)
                     entry.min = not entry.min
-                    label.state:setChecked(entry.min)
-                    label.state:setColor(entry.min and '#00FF00' or '#FF0000')
-                    label.state:setTooltip(entry.min and 'Open Minimised' or 'Do not minimise')
+                    row.state:setChecked(entry.min)
+                    row.state:setColor(entry.min and '#00FF00' or '#FF0000')
+                    row.state:setTooltip(entry.min and 'Abrir Minimizada' or 'Abrir Normal')
                 end
-                label.openNext:setChecked(entry.openNext or false)
-                label.openNext.onClick = function(widget)
+
+                row.openNext:setChecked(entry.openNext or false)
+                row.openNext.onClick = function(widget)
                     entry.openNext = not entry.openNext
-                    label.openNext:setChecked(entry.openNext)
-                    label.openNext:setColor(entry.openNext and '#00FF00' or '#FF0000')
+                    row.openNext:setChecked(entry.openNext)
+                    row.openNext:setColor(entry.openNext and '#00FF00' or '#FF0000')
                 end
-                label:setText(entry.value or ("BP " .. tostring(entry.item or 0)))
-                label.enabled:setChecked(entry.enabled)
-                label.enabled:setTooltip(entry.enabled and 'Disable' or 'Enable')
-                label.enabled:setImageColor(entry.enabled and '#00FF00' or '#FF0000')
-                label.state:setColor(entry.min and '#00FF00' or '#FF0000')
-                label.state:setTooltip(entry.min and 'Open Minimised' or 'Do not minimise')
-                label.openNext:setColor(entry.openNext and '#00FF00' or '#FF0000')
+
+                row.remove.onClick = function(widget)
+                    table.remove(config.list, k)
+                    refreshContNames()
+                end
+
+                row.enabled:setChecked(entry.enabled)
+                row.enabled:setTooltip(entry.enabled and 'Desactivar mochila' or 'Activar mochila')
+                row.enabled:setImageColor(entry.enabled and '#00FF00' or '#FF0000')
+                row.state:setColor(entry.min and '#00FF00' or '#FF0000')
+                row.state:setTooltip(entry.min and 'Abrir Minimizada' or 'Abrir Normal')
+                row.openNext:setColor(entry.openNext and '#00FF00' or '#FF0000')
 
                 if tFocus and entry.item == tFocus then
-                    tFocus = label
+                    tFocus = row
                 end
             end
             if tFocus and type(tFocus) ~= "number" then contListWindow.itemList:focusChild(tFocus) end
         end
     end
 
+    contListWindow.contId.onItemChange = function(widget)
+        local itemId = widget:getItemId()
+        if itemId > 0 then
+            contListWindow.contIdInput:setText(tostring(itemId))
+        end
+    end
+
+    contListWindow.contIdInput.onTextChange = function(widget, text)
+        local num = tonumber(text)
+        if num and num > 0 and num ~= contListWindow.contId:getItemId() then
+            contListWindow.contId:setItemId(num)
+        end
+    end
+
     contListWindow.addItem.onClick = function(widget)
         local id = contListWindow.contId:getItemId()
+        local inputId = tonumber(contListWindow.contIdInput:getText())
+        if (not id or id <= 100) and inputId and inputId > 100 then
+            id = inputId
+        end
         local trigger = contListWindow.contName:getText()
 
-        if id > 100 then
+        if id and id > 100 then
             if not trigger or trigger:len() == 0 then
                 trigger = "BP " .. tostring(id)
             end
@@ -652,6 +726,7 @@ if rootWidget then
                 table.insert(config.list, { item = id, value = trigger, enabled = true, min = false, openNext = false, items = {} })
             end
             contListWindow.contId:setItemId(0)
+            contListWindow.contIdInput:setText('')
             contListWindow.contName:setText('')
             contListWindow.contName:setColor('white')
             contListWindow.contName:setImageColor('#ffffff')
@@ -761,7 +836,7 @@ local mainLoop = macro(350, function()
 end)
 
 onContainerClose(function(container)
-    if config.enabled then
+    if config.enabled and config.forceOpen then
         schedule(250, function()
             checkAndOpenNextContainer()
         end)
